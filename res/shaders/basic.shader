@@ -10,10 +10,10 @@ void main() {
 #shader fragment
 #version 330 core
 
-layout(pixel_center_image) in vec4 gl_FragCoord;
 layout(location = 0) out vec4 color;
 
+uniform vec4 u_Color;
+
 void main() {
-    vec2 screenpos = vec2(gl_FragCoord.xy);
-    color = vec4(screenpos.x, 0.3, screenpos.y, 1.0);
+    color = u_Color;
 }
