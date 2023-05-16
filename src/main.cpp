@@ -5,10 +5,12 @@
 
 #include "renderer.h"
 
-#include "vertexArray.h"
-#include "vertexBuffer.h"
 #include "indexBuffer.h"
 #include "shader.h"
+#include "texture.h"
+#include "vertexArray.h"
+#include "vertexBuffer.h"
+#include "vertexBufferLayout.h"
 
 int main(void)
 {
@@ -44,11 +46,11 @@ int main(void)
 
     {
         // define an array of vertex positions to draw a triangle
-        float vertex_array[] = {
-            0.5f, 0.5f,
-            0.5f, -0.5f,
-            -0.5f, -0.5f,
-            -0.5f, 0.5f
+        float vertices[] = {
+            0.5f, 0.5f, 1.0f, 1.0f,
+            0.5f, -0.5f, 1.0f, 0.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f,
+            -0.5f, 0.5f, 0.0f, 1.0f
         };
 
         // index buffer to prevent duplicate vertices
@@ -56,12 +58,16 @@ int main(void)
             0, 1, 2, 2, 3, 0
         };
 
+        call(glEnable(GL_BLEND));
+        call(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+
         // initialize a vertex array
         vertexArray va;
         // Generate a buffer and bind the vertices to that buffer
-        vertexBuffer vb(vertex_array, 4 * 2 * sizeof(float));
+        vertexBuffer vb(vertices, 4 * 4 * sizeof(float));
 
         vertexBufferLayout layout;
+        layout.push<float>(2);
         layout.push<float>(2);
         va.addBuffer(vb, layout);
 
@@ -72,31 +78,26 @@ int main(void)
         shader shader("res/shaders/basic.shader");
         shader.bind();
 
+        texture texture("res/textures/obamna.png");
+        texture.bind();
+        shader.setUniform1i("u_texture", 0);
+
         // unbind all vaos, vbs, ibos, and shaders
         va.unbind();
         vb.unbind();
         ib.unbind();
         shader.unbind();
 
-        float n = 0.0f;
-        float incr = 0.05f;
+        renderer renderer;
+
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window)) {
             // Render here
-            call(glClear(GL_COLOR_BUFFER_BIT));
+            renderer.clear();
 
             shader.bind();
-            shader.setUniform4f("u_Color", n, 0.3f, 0.8f, 1.0f);
 
-            va.bind();
-            ib.bind();
-
-            call(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
-
-            if (n < 0.0f || n > 1.0f)
-                incr = -incr;
-
-            n += incr;
+            renderer.draw(va, ib, shader);
 
             // Swap front and back buffers
             glfwSwapBuffers(window);

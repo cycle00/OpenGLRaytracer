@@ -14,3 +14,15 @@ bool GLLogCall(const char* function, const char* file, int line) {
     }
     return true;
 }
+
+void renderer::clear() const {
+    call(glClear(GL_COLOR_BUFFER_BIT));
+}
+
+void renderer::draw(const vertexArray& va, const indexBuffer& ib, const shader& shader) const {
+    shader.bind();
+    va.bind();
+    ib.bind();
+
+    call(glDrawElements(GL_TRIANGLES, ib.getCount(), GL_UNSIGNED_INT, nullptr));
+}
