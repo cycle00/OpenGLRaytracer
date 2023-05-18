@@ -1,5 +1,11 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
+#include "vendor/imgui/imgui.h"
+#include "vendor/imgui/imgui_impl_glfw.h"
+#include "vendor/imgui/imgui_impl_opengl3.h"
 
 #include <iostream>
 
@@ -47,10 +53,10 @@ int main(void)
     {
         // define an array of vertex positions to draw a triangle
         float vertices[] = {
-            0.5f, 0.5f, 1.0f, 1.0f,
-            0.5f, -0.5f, 1.0f, 0.0f,
-            -0.5f, -0.5f, 0.0f, 0.0f,
-            -0.5f, 0.5f, 0.0f, 1.0f
+            400.0f, 400.0f, 1.0f, 1.0f,
+            400.0f, 200.0f, 1.0f, 0.0f,
+            200.0f, 200.0f, 0.0f, 0.0f,
+            200.0f, 400.0f, 0.0f, 1.0f
         };
 
         // index buffer to prevent duplicate vertices
@@ -74,6 +80,10 @@ int main(void)
         // Generate and bind index buffer
         indexBuffer ib(indices, 6);
 
+        glm::mat4 proj = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+        glm::vec3 translation(0, 0, 0);
+
         // Use shader
         shader shader("res/shaders/basic.shader");
         shader.bind();
@@ -90,14 +100,35 @@ int main(void)
 
         renderer renderer;
 
+        ImGui::CreateContext();
+        ImGui_ImplGlfw_InitForOpenGL(window, true);
+        ImGui_ImplOpenGL3_Init("#version 130");
+        ImGui::StyleColorsDark();
+
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window)) {
             // Render here
             renderer.clear();
 
+            ImGui_ImplOpenGL3_NewFrame();
+            ImGui_ImplGlfw_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::SliderFloat("obamna x", &translation.x, 0.0f, 640.0f);
+            ImGui::SliderFloat("obamna y", &translation.y, 0.0f, 480.0f);
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
+            glm::mat4 mvp = proj * view * model;
+
             shader.bind();
+            shader.setUniformMat4f("u_mvp", mvp);
 
             renderer.draw(va, ib, shader);
+
+
+            ImGui::Render();
+            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
@@ -106,6 +137,10 @@ int main(void)
             glfwPollEvents();
         }
     }
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;
