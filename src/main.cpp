@@ -18,6 +18,10 @@
 #include "vertexBuffer.h"
 #include "vertexBufferLayout.h"
 
+#include "scene.h"
+
+glm::mat4 rotationMatrix(1);
+
 int main(void)
 {
     GLFWwindow* window;
@@ -26,12 +30,20 @@ int main(void)
     if (!glfwInit())
         return -1;
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    // Create a windowed mode window and its OpenGL context
-    window = glfwCreateWindow(640, 480, "OpenGL Window", NULL, NULL);
+    // Create a borderless fullscreen mode window and its OpenGL context
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+    glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+    glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+    glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
+
+    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", monitor, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -39,8 +51,6 @@ int main(void)
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
-
-    glfwSwapInterval(1);
 
     // Initialize GLEW
     if (glewInit() != GLEW_OK) {
@@ -51,48 +61,53 @@ int main(void)
     std::cout << glGetString(GL_VERSION) << std::endl;
 
     {
-        // define an array of vertex positions to draw a triangle
-        float vertices[] = {
-            400.0f, 400.0f, 1.0f, 1.0f,
-            400.0f, 200.0f, 1.0f, 0.0f,
-            200.0f, 200.0f, 0.0f, 0.0f,
-            200.0f, 400.0f, 0.0f, 1.0f
+        float viewport[] = {
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+            1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
+            1.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+            -1.0f, 1.0f, 0.0f,  0.0f, 1.0f 
         };
 
-        // index buffer to prevent duplicate vertices
-        unsigned int indices[] = {
-            0, 1, 2, 2, 3, 0
+        unsigned int index_buffer[] = {
+            0, 1, 2,
+            2, 3, 0
         };
 
         call(glEnable(GL_BLEND));
         call(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
+        glm::vec3 cameraPos(0.0f, 0.0f, 0.0f);
+        float cameraPitch = 0.0f;
+        float cameraYaw = 0.0f;
+        
+
+
         // initialize a vertex array
         vertexArray va;
         // Generate a buffer and bind the vertices to that buffer
-        vertexBuffer vb(vertices, 4 * 4 * sizeof(float));
+        vertexBuffer vb(viewport, 4 * 5 * sizeof(float));
 
         vertexBufferLayout layout;
-        layout.push<float>(2);
+        layout.push<float>(3);
         layout.push<float>(2);
         va.addBuffer(vb, layout);
 
         // Generate and bind index buffer
-        indexBuffer ib(indices, 6);
-
-        glm::mat4 proj = glm::ortho(0.0f, 640.0f, 0.0f, 480.0f, -1.0f, 1.0f);
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
-        glm::vec3 translation(0, 0, 0);
+        indexBuffer ib(index_buffer, 6);
 
         // Use shader
-        shader shader("res/shaders/basic.shader");
+        shader shader("res/shaders/raytrace.shader");
         shader.bind();
+        shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
+        shader.setUniform3f("u_cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
+        shader.setUniformMat4f("u_rotationMatrix", rotationMatrix);
 
-        texture texture("res/textures/obamna.png");
-        texture.bind();
-        shader.setUniform1i("u_texture", 0);
+        scene::object objects[]{
+            {SPHERE, {0.0f, 0.0f, 2.0f}, {1.0f, 1.0f, 1.0f}}
+        };
+        shader.setUniformObject(objects[0], 0);
 
-        // unbind all vaos, vbs, ibos, and shaders
+        // unbind vao, vb, ibo, and shader
         va.unbind();
         vb.unbind();
         ib.unbind();
@@ -114,18 +129,11 @@ int main(void)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
-            ImGui::SliderFloat("obamna x", &translation.x, 0.0f, 640.0f);
-            ImGui::SliderFloat("obamna y", &translation.y, 0.0f, 480.0f);
             ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-            glm::mat4 mvp = proj * view * model;
-
             shader.bind();
-            shader.setUniformMat4f("u_mvp", mvp);
 
             renderer.draw(va, ib, shader);
-
 
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

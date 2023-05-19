@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "scene.h"
+
 struct shaderProgramSource {
 	std::string vertexSource;
 	std::string fragmentSource;
@@ -29,6 +31,9 @@ public:
 
 	void setUniform1i(const std::string& name, int value);
 	void setUniform1f(const std::string& name, float value);
-	void setUniform4f(const std::string& name, float f0, float f1, float f2, float f3);
+	void setUniform3f(const std::string& name, float v0, float v1, float v2);
+	void setUniform4f(const std::string& name, float v0, float v1, float v2, float v3);
 	void setUniformMat4f(const std::string& name, glm::mat4 value);
+
+	void setUniformObject(scene::object object, unsigned int index);
 };

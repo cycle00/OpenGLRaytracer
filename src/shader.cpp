@@ -38,8 +38,11 @@ shaderProgramSource shader::parseShader(const std::string& filepath) {
                 type = shaderType::FRAGMENT;
             }
         }
-        else {
+        else if (line.find("//") == std::string::npos) {
             ss[(int)type] << line << '\n';
+        }
+        else if (int comment = line.find("//")) {
+            ss[(int)type] << line.substr(0, comment) << '\n';
         }
     }
 
@@ -104,6 +107,11 @@ void shader::setUniform1f(const std::string& name, float value) {
     call(glUniform1f(getUniformLocation(name), value));
 }
 
+void shader::setUniform3f(const std::string& name, float v0, float v1, float v2) {
+
+    call(glUniform3f(getUniformLocation(name), v0, v1, v2));
+}
+
 void shader::setUniform4f(const std::string& name, float v0, float v1, float v2, float v3) {
     
     call(glUniform4f(getUniformLocation(name), v0, v1, v2, v3));
@@ -111,6 +119,13 @@ void shader::setUniform4f(const std::string& name, float v0, float v1, float v2,
 
 void shader::setUniformMat4f(const std::string& name, glm::mat4 value) {
     call(glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &value[0][0]));
+}
+
+void shader::setUniformObject(scene::object object, unsigned int index) {
+    call(glUniform1ui(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].type")), object.type));
+    call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].position")), object.position[0], object.position[1], object.position[2]));
+    call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].scale")), object.scale[0], object.scale[1], object.scale[2]));
+    // TODO: MATERIAL
 }
 
 int shader::getUniformLocation(const std::string& name) {

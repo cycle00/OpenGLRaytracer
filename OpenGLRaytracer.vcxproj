@@ -162,6 +162,7 @@
     <ClCompile Include="src\indexBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\renderer.cpp" />
+    <ClCompile Include="src\scene.cpp" />
     <ClCompile Include="src\shader.cpp" />
     <ClCompile Include="src\texture.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui.cpp" />
@@ -177,10 +178,12 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\basic.shader" />
+    <None Include="res\shaders\raytrace.shader" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\indexBuffer.h" />
     <ClInclude Include="src\renderer.h" />
+    <ClInclude Include="src\scene.h" />
     <ClInclude Include="src\shader.h" />
     <ClInclude Include="src\texture.h" />
     <ClInclude Include="src\vendor\imgui\imconfig.h" />
