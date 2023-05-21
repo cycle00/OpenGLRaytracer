@@ -36,4 +36,5 @@ public:
 	void setUniformMat4f(const std::string& name, glm::mat4 value);
 
 	void setUniformObject(scene::object object, unsigned int index);
+	void setUniformLight(scene::pointLight light, unsigned int index);
 };

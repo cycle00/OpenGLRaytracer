@@ -128,6 +128,14 @@ void shader::setUniformObject(scene::object object, unsigned int index) {
     // TODO: MATERIAL
 }
 
+void shader::setUniformLight(scene::pointLight light, unsigned int index) {
+    call(glUniform3f(getUniformLocation(std::string("u_lights[").append(std::to_string(index)).append("].position")), light.position[0], light.position[1], light.position[2]));
+    call(glUniform1f(getUniformLocation(std::string("u_lights[").append(std::to_string(index)).append("].radius")), light.radius));
+    call(glUniform3f(getUniformLocation(std::string("u_lights[").append(std::to_string(index)).append("].color")), light.color[0], light.color[1], light.color[2]));
+    call(glUniform1f(getUniformLocation(std::string("u_lights[").append(std::to_string(index)).append("].power")), light.power));
+    call(glUniform1f(getUniformLocation(std::string("u_lights[").append(std::to_string(index)).append("].reach")), light.reach));
+}
+
 int shader::getUniformLocation(const std::string& name) {
     if (m_uniformLocationCache.find(name) != m_uniformLocationCache.end()) {
         return m_uniformLocationCache[name];

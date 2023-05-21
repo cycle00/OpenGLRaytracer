@@ -20,7 +20,90 @@
 
 #include "scene.h"
 
+bool mouseAbsorbed = false;
+
 glm::mat4 rotationMatrix(1);
+
+glm::vec3 cameraPos(0.0f, 1.0f, -1.0f);
+float cameraPitch = 0.0f;
+float cameraYaw = 0.0f;
+
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (action == GLFW_PRESS) {
+        if (key == GLFW_KEY_ESCAPE) {
+            if (mouseAbsorbed) {
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                mouseAbsorbed = false;
+            }
+            else {
+                int screenWidth, screenHeight;
+                glfwGetWindowSize(window, &screenWidth, &screenHeight);
+
+                glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetCursorPos(window, screenWidth / 2.0, screenHeight / 2.0);
+                mouseAbsorbed = true;
+            }
+        }
+    }
+}
+
+bool handleMovement(GLFWwindow* window, double deltaTime, glm::vec3& cameraPosition, float& cameraPitch, float& cameraYaw, glm::mat4* rotationMatrix) {
+    bool moved = false;
+    
+    int screenWidth, screenHeight;
+    glfwGetWindowSize(window, &screenWidth, &screenHeight);
+
+    double mouseX, mouseY;
+    glfwGetCursorPos(window, &mouseX, &mouseY);
+    glfwSetCursorPos(window, screenWidth / 2.0, screenHeight / 2.0);
+
+    float xOffset = (float)(mouseX - screenWidth / 2.0);
+    float yOffset = (float)(mouseY - screenHeight / 2.0);
+
+    if (xOffset != 0.0f || yOffset != 0.0f) moved = true;
+
+    cameraYaw += xOffset * 0.002f;
+    cameraPitch += yOffset * 0.002f;
+
+    if (cameraPitch > 1.5707f)
+        cameraPitch = 1.5707f;
+    if (cameraPitch < -1.5707f)
+        cameraPitch = -1.5707f;
+
+    *rotationMatrix = glm::rotate(glm::rotate(glm::mat4(1), cameraPitch, glm::vec3(1, 0, 0)), cameraYaw, glm::vec3(0, 1, 0));
+
+    glm::vec3 forward = glm::vec3(glm::vec4(0, 0, -1, 0) * (*rotationMatrix));
+    glm::vec3 up(0, 1, 0);
+    glm::vec3 right = glm::cross(forward, up);
+
+    glm::vec3 movementDirection(0);
+
+    if (glfwGetKey(window, GLFW_KEY_W)) {
+        movementDirection += forward;
+    }
+    if (glfwGetKey(window, GLFW_KEY_S)) {
+        movementDirection -= forward;
+    }
+    if (glfwGetKey(window, GLFW_KEY_D)) {
+        movementDirection += right;
+    }
+    if (glfwGetKey(window, GLFW_KEY_A)) {
+        movementDirection -= right;
+    }
+    if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+        movementDirection += up;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT)) {
+        movementDirection -= up;
+    }
+
+    if (glm::length(movementDirection) > 0.0f) {
+        cameraPosition += glm::normalize(movementDirection) * (float)deltaTime;
+        moved = true;
+    }
+
+    return moved;
+}
 
 int main(void)
 {
@@ -43,11 +126,13 @@ int main(void)
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", monitor, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
     }
+
+    glfwSetKeyCallback(window, keyCallback);
 
     // Make the window's context current
     glfwMakeContextCurrent(window);
@@ -65,7 +150,7 @@ int main(void)
             -1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
             1.0f, -1.0f, 0.0f,  1.0f, 0.0f,
             1.0f, 1.0f, 0.0f,   1.0f, 1.0f,
-            -1.0f, 1.0f, 0.0f,  0.0f, 1.0f 
+            -1.0f, 1.0f, 0.0f,  0.0f, 1.0f
         };
 
         unsigned int index_buffer[] = {
@@ -75,12 +160,6 @@ int main(void)
 
         call(glEnable(GL_BLEND));
         call(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
-        glm::vec3 cameraPos(0.0f, 0.0f, 0.0f);
-        float cameraPitch = 0.0f;
-        float cameraYaw = 0.0f;
-        
-
 
         // initialize a vertex array
         vertexArray va;
@@ -99,13 +178,19 @@ int main(void)
         shader shader("res/shaders/raytrace.shader");
         shader.bind();
         shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
-        shader.setUniform3f("u_cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
-        shader.setUniformMat4f("u_rotationMatrix", rotationMatrix);
 
-        scene::object objects[]{
-            {SPHERE, {0.0f, 0.0f, 2.0f}, {1.0f, 1.0f, 1.0f}}
+        scene::object objects[] = {
+            {SPHERE, {0.0f, 1.0f, 2.0f}, {1.0f, 1.0f, 1.0f}},
+            {SPHERE, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}
         };
+        scene::pointLight lights[] = {
+            {{1.0f, 3.0f, -1.5f}, 0.5f, {1.0f, 1.0f, 1.0f}, 15.0f, 30.0f}
+        };
+
+        shader.setUniformLight(lights[0], 0);
         shader.setUniformObject(objects[0], 0);
+        shader.setUniformObject(objects[1], 1);
+        shader.setUniformObject(objects[2], 2);
 
         // unbind vao, vb, ibo, and shader
         va.unbind();
@@ -120,8 +205,20 @@ int main(void)
         ImGui_ImplOpenGL3_Init("#version 130");
         ImGui::StyleColorsDark();
 
+        double deltaTime = 0.0f;
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window)) {
+            double preTime = glfwGetTime();
+            // Poll for and process events
+            glfwPollEvents();
+            
+            if (mouseAbsorbed) {
+                if (handleMovement(window, deltaTime, cameraPos, cameraPitch, cameraYaw, &rotationMatrix)) {
+                    shader.setUniform3f("u_cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
+                    shader.setUniformMat4f("u_rotationMatrix", rotationMatrix);
+                }
+            }
+            
             // Render here
             renderer.clear();
 
@@ -141,8 +238,7 @@ int main(void)
             // Swap front and back buffers
             glfwSwapBuffers(window);
 
-            // Poll for and process events
-            glfwPollEvents();
+            deltaTime = glfwGetTime() - preTime;
         }
     }
 

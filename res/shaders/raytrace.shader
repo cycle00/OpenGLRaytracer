@@ -17,6 +17,7 @@ void main() {
 // like a lot of this code came from https://github.com/carl-vbn/opengl-raytracing/blob/main/shaders/fragment.glsl, modified to fit my project
 
 #define RENDER_DISTANCE 10000
+#define EPSILON 0.0001
 
 in vec2 fragUV;
 out vec4 fragColor;
@@ -28,7 +29,7 @@ struct Ray {
 
 struct SurfacePoint {
 	vec3 position;
-	// vec3 normal;
+	vec3 normal;
 	// Material material;
 };
 
@@ -43,14 +44,23 @@ struct Object {
 	// Material material;
 };
 
+struct PointLight {
+	vec3 position;
+	float radius;
+	vec3 color;
+	float power;
+	float reach;
+};
+
 uniform float u_aspectRatio;
 uniform vec3 u_cameraPos;
 uniform mat4 u_rotationMatrix;
 
+uniform PointLight u_lights[4];
 uniform Object u_objects[64];
 
 bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDistance) {
-	vec3 relativeOrigin = position - ray.origin;
+	vec3 relativeOrigin = ray.origin - position;
 
 	// ray = a+bt (a = origin, b = direction, t = distance along vector where intersection happens)
 	// x^2 + y^2 + z^2 - r^2 = 0; sub in a_x+b_xt for x, a_y+b_yt for y, and a_z+b_zt for z
@@ -72,6 +82,16 @@ bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDista
 	return false;
 }
 
+bool planeIntersection(vec3 planeNormal, vec3 planePoint, Ray ray, out float hitDistance) {
+	float angle = dot(planeNormal, ray.direction);
+	if (abs(angle) > EPSILON) {
+		vec3 distance = planePoint - ray.origin;
+		hitDistance = dot(distance, planeNormal) / angle;
+		return (hitDistance >= EPSILON);
+	}
+	return false;
+}
+
 bool raycast(Ray ray, out SurfacePoint hitPoint) {
 	bool didHit = false;
 	float minHitDist = RENDER_DISTANCE; // so that no far objects get rendered on top of near objects
@@ -84,7 +104,7 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			if (hitDist < minHitDist) {
 				minHitDist = hitDist;
 				hitPoint.position = ray.origin + ray.direction * minHitDist;
-				// hitPoint.normal
+				hitPoint.normal = normalize(hitPoint.position - u_objects[i].position);
 				// hitPoint.material
 			}
 		}
@@ -92,9 +112,36 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 		// if (u_objects[i].type == 2)
 	}
 
-	// plane intersection
+	if (planeIntersection(vec3(0, 1, 0), vec3(0, 0, 0), ray, hitDist)) {
+		didHit = true;
+		if (hitDist < minHitDist) {
+			minHitDist = hitDist;
+			hitPoint.position = ray.origin + ray.direction * minHitDist;
+			hitPoint.normal = vec3(0, 1, 0);
+			// material
+		}
+	}
 
 	return didHit;
+}
+
+vec3 directIllumination(SurfacePoint hitPoint) {
+	vec3 illumination = vec3(0);
+	for (int i = 0; i < u_lights.length(); i++) {
+		PointLight light = u_lights[i];
+		float lightDistance = length(light.position - hitPoint.position);
+		if (lightDistance > light.reach) continue;
+
+		// illumination = light_color * object_albedo * cos(angle_between_normal_and_light_direction) -> (dot(normal, light_direction))
+		vec3 lightDirection = normalize(light.position - hitPoint.position);
+		float diffuse = clamp(dot(hitPoint.normal, lightDirection), 0.0, 1.0);
+		SurfacePoint shadowRayHit;
+		if (!raycast(Ray(hitPoint.position, lightDirection), shadowRayHit)) {
+			float attenuation = lightDistance * lightDistance;
+			illumination += light.color * light.power * diffuse * vec3(1.0, 0.0, 1.0) / attenuation;
+		}
+	}
+	return illumination;
 }
 
 void main() {
@@ -104,7 +151,8 @@ void main() {
 
 	SurfacePoint hitPoint;
 	if (raycast(cameraRay, hitPoint)) {
-		fragColor = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+		fragColor = vec4(directIllumination(hitPoint), 1.0f);
 	}
 }
 // --------------------------------------------------
+

@@ -16,7 +16,8 @@ namespace scene {
 		float position[3];
 		float scale[3];
 
-		// constructor
+		//object();
+		//object(unsigned int type, float position[3], float scale[3]);
 	};
 
 	struct pointLight {
