@@ -7,6 +7,10 @@
 
 #include "renderer.h"
 
+shader::shader() : m_rendererID(0) {
+
+}
+
 shader::shader(const std::string& filepath) : m_filepath(filepath), m_rendererID(0) {
     shaderProgramSource source = parseShader(filepath);
     m_rendererID = createShader(source.vertexSource, source.fragmentSource);
@@ -125,7 +129,8 @@ void shader::setUniformObject(scene::object object, unsigned int index) {
     call(glUniform1ui(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].type")), object.type));
     call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].position")), object.position[0], object.position[1], object.position[2]));
     call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].scale")), object.scale[0], object.scale[1], object.scale[2]));
-    // TODO: MATERIAL
+    // Material
+    call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.albedo")), object.mat.albedo[0], object.mat.albedo[1], object.mat.albedo[2]));
 }
 
 void shader::setUniformLight(scene::pointLight light, unsigned int index) {

@@ -11,6 +11,7 @@
 
 #include "renderer.h"
 
+#include "guiManager.h"
 #include "indexBuffer.h"
 #include "shader.h"
 #include "texture.h"
@@ -126,7 +127,7 @@ int main(void)
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", NULL, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", monitor, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -179,18 +180,12 @@ int main(void)
         shader.bind();
         shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
 
-        scene::object objects[] = {
-            {SPHERE, {0.0f, 1.0f, 2.0f}, {1.0f, 1.0f, 1.0f}},
-            {SPHERE, {1.0f, 1.0f, 0.0f}, {1.0f, 1.0f, 1.0f}}
-        };
-        scene::pointLight lights[] = {
-            {{1.0f, 3.0f, -1.5f}, 0.5f, {1.0f, 1.0f, 1.0f}, 15.0f, 30.0f}
-        };
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f })));
+        scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 10.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
-        shader.setUniformLight(lights[0], 0);
-        shader.setUniformObject(objects[0], 0);
-        shader.setUniformObject(objects[1], 1);
-        shader.setUniformObject(objects[2], 2);
+        scene::currShader = &shader;
+        scene::updateObjects();
+        scene::updateLights();
 
         // unbind vao, vb, ibo, and shader
         va.unbind();
@@ -200,10 +195,7 @@ int main(void)
 
         renderer renderer;
 
-        ImGui::CreateContext();
-        ImGui_ImplGlfw_InitForOpenGL(window, true);
-        ImGui_ImplOpenGL3_Init("#version 130");
-        ImGui::StyleColorsDark();
+        guiManager gui(window);
 
         double deltaTime = 0.0f;
         // Loop until the user closes the window
@@ -222,18 +214,15 @@ int main(void)
             // Render here
             renderer.clear();
 
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            gui.newFrame();
 
             shader.bind();
+            shader.setUniform1f("u_time", preTime);
+            scene::setProperties();
 
             renderer.draw(va, ib, shader);
 
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+            gui.render();
 
             // Swap front and back buffers
             glfwSwapBuffers(window);
@@ -241,10 +230,6 @@ int main(void)
             deltaTime = glfwGetTime() - preTime;
         }
     }
-
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
 
     glfwTerminate();
     return 0;

@@ -23,6 +23,7 @@ private:
 	unsigned int createShader(const std::string& vertexShader, const std::string& fragShader);
 	int getUniformLocation(const std::string& name);
 public:
+	shader();
 	shader(const std::string& filepath);
 	~shader();
 

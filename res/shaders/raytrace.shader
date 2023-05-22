@@ -27,21 +27,21 @@ struct Ray {
 	vec3 direction;
 };
 
+struct Material {
+	vec3 albedo;
+};
+
 struct SurfacePoint {
 	vec3 position;
 	vec3 normal;
-	// Material material;
-};
-
-struct Material {
-	vec3 albedo;
+	Material material;
 };
 
 struct Object {
 	uint type;
 	vec3 position;
 	vec3 scale;
-	// Material material;
+	Material material;
 };
 
 struct PointLight {
@@ -55,9 +55,16 @@ struct PointLight {
 uniform float u_aspectRatio;
 uniform vec3 u_cameraPos;
 uniform mat4 u_rotationMatrix;
+uniform float u_time; // seed
 
+uniform int u_shadowResolution;
 uniform PointLight u_lights[4];
 uniform Object u_objects[64];
+
+// https://thebookofshaders.com/10/
+float rand(vec2 seed) {
+	return fract(sin(dot(seed, vec2(12.9898, 78.233))) *43758.5453123);
+}
 
 bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDistance) {
 	vec3 relativeOrigin = ray.origin - position;
@@ -105,7 +112,7 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 				minHitDist = hitDist;
 				hitPoint.position = ray.origin + ray.direction * minHitDist;
 				hitPoint.normal = normalize(hitPoint.position - u_objects[i].position);
-				// hitPoint.material
+				hitPoint.material = u_objects[i].material;
 			}
 		}
 
@@ -118,14 +125,14 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			minHitDist = hitDist;
 			hitPoint.position = ray.origin + ray.direction * minHitDist;
 			hitPoint.normal = vec3(0, 1, 0);
-			// material
+			hitPoint.material = Material(vec3(1.0, 1.0, 1.0));
 		}
 	}
 
 	return didHit;
 }
 
-vec3 directIllumination(SurfacePoint hitPoint) {
+vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 	vec3 illumination = vec3(0);
 	for (int i = 0; i < u_lights.length(); i++) {
 		PointLight light = u_lights[i];
@@ -133,12 +140,27 @@ vec3 directIllumination(SurfacePoint hitPoint) {
 		if (lightDistance > light.reach) continue;
 
 		// illumination = light_color * object_albedo * cos(angle_between_normal_and_light_direction) -> (dot(normal, light_direction))
-		vec3 lightDirection = normalize(light.position - hitPoint.position);
-		float diffuse = clamp(dot(hitPoint.normal, lightDirection), 0.0, 1.0);
-		SurfacePoint shadowRayHit;
-		if (!raycast(Ray(hitPoint.position, lightDirection), shadowRayHit)) {
+		float diffuse = clamp(dot(hitPoint.normal, normalize(light.position - hitPoint.position)), 0.0, 1.0);
+		if (diffuse > EPSILON) { // or if roughness is less than one (but that doesnt matter rn)
+			// this is basically directly taken from https://github.com/carl-vbn/opengl-raytracing/blob/main/shaders/fragment.glsl because i dont know a better way to find the right amound of shadow rays
+			int shadowRays = int(u_shadowResolution * light.radius * light.radius / (lightDistance * lightDistance) + 1);
+			int shadowRayHits = 0;
+			for (int i = 0; i < shadowRays; i++) {
+				vec3 lightSurfacePoint = light.position + normalize(vec3(rand(vec2(i + seed, 1) + hitPoint.position.xy), rand(vec2(i + seed, 2) + hitPoint.position.yz), rand(vec2(i + seed, 3) + hitPoint.position.xz))) * light.radius;
+				vec3 lightDirection = normalize(lightSurfacePoint - hitPoint.position);
+				vec3 rayOrigin = hitPoint.position + lightDirection * EPSILON * 2.0;
+				float maxRayLength = length(lightSurfacePoint - rayOrigin);
+				Ray shadowRay = Ray(rayOrigin, lightDirection);
+				SurfacePoint shadowRayHit;
+				if (raycast(shadowRay, shadowRayHit)) {
+					if (length(shadowRayHit.position - rayOrigin) < maxRayLength) {
+						shadowRayHits += 1;
+					}
+				}
+			}
+
 			float attenuation = lightDistance * lightDistance;
-			illumination += light.color * light.power * diffuse * vec3(1.0, 0.0, 1.0) / attenuation;
+			illumination += light.color * light.power * diffuse * hitPoint.material.albedo * (1.0-float(shadowRayHits)/shadowRays) / attenuation;
 		}
 	}
 	return illumination;
@@ -151,7 +173,7 @@ void main() {
 
 	SurfacePoint hitPoint;
 	if (raycast(cameraRay, hitPoint)) {
-		fragColor = vec4(directIllumination(hitPoint), 1.0f);
+		fragColor = vec4(directIllumination(hitPoint, u_time), 1.0f);
 	}
 }
 // --------------------------------------------------

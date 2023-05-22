@@ -159,6 +159,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\guiManager.cpp" />
     <ClCompile Include="src\indexBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\renderer.cpp" />
@@ -181,6 +182,7 @@
     <None Include="res\shaders\raytrace.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\guiManager.h" />
     <ClInclude Include="src\indexBuffer.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\scene.h" />
@@ -202,6 +204,9 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\obamna.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="res\fonts\Roboto-Medium.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
