@@ -1,5 +1,7 @@
 #include "guiManager.h"
 
+bool guiManager::show = true;
+
 guiManager::guiManager(GLFWwindow* window) : window(window) {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -51,7 +53,9 @@ void guiManager::objectEdit() {
         ImGui::DragFloat("##radius", &scene::objects[scene::selectedObjectIndex].scale[0], 0.005f);
     }
 
-    // material
+    if (ImGui::Button("Material")) {
+        showMaterialList = true;
+    }
 
     ImGui::Spacing();
     if (ImGui::Button("Delete Object")) {
@@ -61,6 +65,44 @@ void guiManager::objectEdit() {
 
     ImGui::End();
     scene::updateObjects();
+}
+
+void guiManager::materialList() {
+    ImGui::Begin("Material List", &showMaterialList);
+    ImGui::TextColored(ImVec4(0.8f, 1.0f, 1.0f, 1.0f), "Materials");
+    ImGui::SameLine();
+    if (ImGui::Button("+##mat")) {
+        scene::selectedMaterialIndex = -1;
+        showMaterialEdit = true;
+    }
+    ImGui::BeginChild("Materials", ImVec2(200, 100), true);
+    for (unsigned int i = 0; i < scene::materials.size(); i++) {
+        if (ImGui::SmallButton(std::string("Material ").append(std::to_string(i)).c_str())) {
+            scene::selectedMaterialIndex = i;
+            showMaterialEdit = true;
+        }
+    }
+    ImGui::EndChild();
+    ImGui::End();
+}
+
+void guiManager::materialEdit() {
+    ImGui::Begin("Material Editor", &showMaterialEdit);
+
+    if (scene::selectedMaterialIndex == -1) {
+        scene::material m = scene::material();
+        scene::materials.push_back(m);
+        scene::selectedMaterialIndex = scene::materials.size() - 1;
+    }
+
+    ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
+    ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
+
+    if (scene::selectedMaterialIndex != -1) {
+        scene::objects[scene::selectedObjectIndex].mat = scene::materials[scene::selectedMaterialIndex];
+    }
+
+    ImGui::End();
 }
 
 void guiManager::lightEdit() {
@@ -80,7 +122,7 @@ void guiManager::lightEdit() {
     ImGui::DragFloat("##radius", &scene::lights[scene::selectedLightIndex].radius, 0.005f);
 
     ImGui::Text("Color");
-    ImGui::ColorEdit3("##color", scene::lights[scene::selectedLightIndex].color);
+    ImGui::ColorPicker3("##color", scene::lights[scene::selectedLightIndex].color);
 
     ImGui::Text("Power");
     ImGui::DragFloat("##power", &scene::lights[scene::selectedLightIndex].power, 0.005f);
@@ -98,48 +140,61 @@ void guiManager::lightEdit() {
     scene::updateLights();
 }
 
+void guiManager::showGUI() {
+    show = true;
+}
+
+void guiManager::hideGUI() {
+    show = false;
+}
+
 void guiManager::render() {
-    ImGui::Begin("Ray Tracer");
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-    ImGui::TextColored(ImVec4(1.0f, 0.8f, 1.0f, 1.0f), "Objects");
-    ImGui::SameLine();
-    if (ImGui::Button("+##obj")) {
-        scene::selectedObjectIndex = -1;
-        showObjectEdit = true;
-    }
-    ImGui::BeginChild("Objects", ImVec2(200, 100), true);
-    for (unsigned int i = 0; i < scene::objects.size(); i++) {
-        if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
-            scene::selectedObjectIndex = i;
+    if (show) {
+        ImGui::Begin("Ray Tracer");
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        ImGui::TextColored(ImVec4(1.0f, 0.8f, 1.0f, 1.0f), "Objects");
+        ImGui::SameLine();
+        if (ImGui::Button("+##obj")) {
+            scene::selectedObjectIndex = -1;
             showObjectEdit = true;
         }
-    }
-    ImGui::EndChild();
-    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.8f, 1.0f), "Lights");
-    ImGui::SameLine();
-    if (ImGui::Button("+##light")) {
-        scene::selectedLightIndex = -1;
-        showLightEdit = true;
-    }
-    ImGui::BeginChild("Lights", ImVec2(200, 100), true);
-    for (unsigned int i = 0; i < scene::lights.size(); i++) {
-        if (ImGui::SmallButton(std::string("Light ").append(std::to_string(i)).c_str())) {
-            scene::selectedLightIndex = i;
+        ImGui::BeginChild("Objects", ImVec2(200, 100), true);
+        for (unsigned int i = 0; i < scene::objects.size(); i++) {
+            if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
+                scene::selectedObjectIndex = i;
+                showObjectEdit = true;
+            }
+        }
+        ImGui::EndChild();
+        ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.8f, 1.0f), "Lights");
+        ImGui::SameLine();
+        if (ImGui::Button("+##light")) {
+            scene::selectedLightIndex = -1;
             showLightEdit = true;
         }
+        ImGui::BeginChild("Lights", ImVec2(200, 100), true);
+        for (unsigned int i = 0; i < scene::lights.size(); i++) {
+            if (ImGui::SmallButton(std::string("Light ").append(std::to_string(i)).c_str())) {
+                scene::selectedLightIndex = i;
+                showLightEdit = true;
+            }
+        }
+        ImGui::EndChild();
+        // plane
+
+        // shadow resolution and other uniform variables
+        ImGui::End();
+
+        // everything here
+        if (showObjectEdit)
+            objectEdit();
+        if (showLightEdit)
+            lightEdit();
+        if (showMaterialList)
+            materialList();
+        if (showMaterialEdit)
+            materialEdit();
     }
-    ImGui::EndChild();
-    // materials
-    // plane
-
-    // shadow resolution and other uniform variables
-    ImGui::End();
-
-    // everything here
-    if (showObjectEdit)
-        objectEdit();
-    if (showLightEdit)
-        lightEdit();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

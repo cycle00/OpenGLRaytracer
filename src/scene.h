@@ -11,10 +11,10 @@ class shader;
 namespace scene {
 	struct material {
 		float albedo[3];
-		// float roughness;
+		float roughness;
 
 		material();
-		material(const std::initializer_list<float>& albedo); // add more as needed
+		material(const std::initializer_list<float>& albedo, float roughness); // add more as needed
 	};
 
 	struct object {
@@ -46,6 +46,7 @@ namespace scene {
 
 	extern int selectedObjectIndex;
 	extern int selectedLightIndex;
+	extern int selectedMaterialIndex;
 	
 	// properties
 	extern int shadowResolution;

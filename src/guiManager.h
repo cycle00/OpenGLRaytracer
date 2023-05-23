@@ -13,19 +13,22 @@
 class guiManager {
 private:
 	GLFWwindow* window;
-	bool show = false;
 	bool showObjectEdit = false;
 	bool showLightEdit = false;
 	bool showPlaneEdit = false;
+	bool showMaterialList = false;
 	bool showMaterialEdit = false;
 public:
 	guiManager(GLFWwindow* window);
 	~guiManager();
 
+	static bool show;
+
 	void newFrame();
 	void objectEdit();
 	void lightEdit();
 	void planeEdit();
+	void materialList();
 	void materialEdit();
 	void render();
 	static void showGUI();

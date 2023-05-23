@@ -11,6 +11,7 @@ namespace scene {
 
 	int selectedObjectIndex = -1;
 	int selectedLightIndex = -1;
+	int selectedMaterialIndex = -1;
 
 	// properties
 
@@ -20,12 +21,14 @@ namespace scene {
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = 1.0f;
 		}
+		this->roughness = 0.0f;
 	}
 
-	material::material(const std::initializer_list<float>& albedo) {
+	material::material(const std::initializer_list<float>& albedo, float roughness) {
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = *(albedo.begin());
 		}
+		this->roughness = roughness;
 	}
 
 	object::object() {

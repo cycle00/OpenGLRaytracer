@@ -45,6 +45,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
                 mouseAbsorbed = true;
             }
         }
+        else if (key == GLFW_KEY_U) {
+            if (guiManager::show) {
+                guiManager::hideGUI();
+            }
+            else {
+                guiManager::showGUI();
+            }
+        }
     }
 }
 
@@ -180,7 +188,7 @@ int main(void)
         shader.bind();
         shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
 
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f })));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, 1.0f)));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 10.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;
