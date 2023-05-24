@@ -18,6 +18,7 @@ void main() {
 
 #define RENDER_DISTANCE 10000
 #define EPSILON 0.0001
+#define PI 3.1415926538
 
 in vec2 fragUV;
 out vec4 fragColor;
@@ -29,6 +30,9 @@ struct Ray {
 
 struct Material {
 	vec3 albedo;
+	vec3 emission;
+	float emissionStrength;
+	float roughness;
 };
 
 struct SurfacePoint {
@@ -125,11 +129,38 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			minHitDist = hitDist;
 			hitPoint.position = ray.origin + ray.direction * minHitDist;
 			hitPoint.normal = vec3(0, 1, 0);
-			hitPoint.material = Material(vec3(1.0, 1.0, 1.0));
+			hitPoint.material = Material(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), 0.0f, 1.0);
 		}
 	}
 
 	return didHit;
+}
+
+// Adapted from https://bitbucket.org/Daerst/gpu-ray-tracing-in-unity/src/Tutorial_Pt2/Assets/RayTracingShader.compute
+mat3x3 getTangentSpace(vec3 normal)
+{
+	// Choose a helper vector for the cross product
+	vec3 helper = vec3(1, 0, 0);
+	if (abs(normal.x) > 0.99)
+		helper = vec3(0, 0, 1);
+
+	// Generate vectors
+	vec3 tangent = normalize(cross(normal, helper));
+	vec3 binormal = normalize(cross(normal, tangent));
+	return mat3x3(tangent, binormal, normal);
+}
+
+// Adapted from https://bitbucket.org/Daerst/gpu-ray-tracing-in-unity/src/Tutorial_Pt2/Assets/RayTracingShader.compute
+vec3 sampleHemisphere(vec3 normal, float alpha, vec2 seed)
+{
+	// Sample the hemisphere, where alpha determines the kind of the sampling
+	float cosTheta = pow(rand(seed), 1.0 / (alpha + 1.0));
+	float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+	float phi = 2 * PI * rand(seed.yx);
+	vec3 tangentSpaceDir = vec3(cos(phi) * sinTheta, sin(phi) * sinTheta, cosTheta);
+
+	// Transform direction to world space
+	return getTangentSpace(normal) * tangentSpaceDir;
 }
 
 vec3 directIllumination(SurfacePoint hitPoint, float seed) {
@@ -166,15 +197,41 @@ vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 	return illumination;
 }
 
+// yeah so glsl prohibits recursion so thats cool
+vec3 calculateGI(Ray cameraRay, float seed) {
+	vec3 gi = vec3(0);
+	vec3 rayOrigin = cameraRay.origin;
+	vec3 rayDirection = cameraRay.direction;
+	vec3 energy = vec3(1);
+	for (int i = 0; i < 50; i++) {
+		SurfacePoint hitPoint;
+		if (raycast(Ray(rayOrigin, rayDirection), hitPoint)) {
+			// emission
+			gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
+
+			gi += energy * directIllumination(hitPoint, seed);
+			
+			// diffuse reflections
+			if (hitPoint.material.albedo != vec3(0)) {
+				rayOrigin = hitPoint.position + hitPoint.normal * EPSILON;
+				rayDirection = sampleHemisphere(hitPoint.normal, 1.0, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+				energy *= hitPoint.material.albedo * clamp(dot(hitPoint.normal, rayDirection), 0.0, 1.0);
+			}
+			else {
+				break;
+			}
+		}
+	}
+
+	return gi;
+}
+
 void main() {
 	vec2 centeredUV = (fragUV * 2 - vec2(1)) * vec2(u_aspectRatio, 1.0); // centers the uv so that rays diverge from the center, not a corner and calculates divergence
 	vec3 rayDir = (normalize(vec4(centeredUV, -1.0, 0.0)) * u_rotationMatrix).xyz;
 	Ray cameraRay = Ray(u_cameraPos, rayDir);
 
-	SurfacePoint hitPoint;
-	if (raycast(cameraRay, hitPoint)) {
-		fragColor = vec4(directIllumination(hitPoint, u_time), 1.0f);
-	}
+	fragColor = vec4(calculateGI(cameraRay, u_time), 1.0);
 }
 // --------------------------------------------------
 

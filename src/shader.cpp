@@ -131,6 +131,9 @@ void shader::setUniformObject(scene::object object, unsigned int index) {
     call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].scale")), object.scale[0], object.scale[1], object.scale[2]));
     // Material
     call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.albedo")), object.mat.albedo[0], object.mat.albedo[1], object.mat.albedo[2]));
+    call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.emission")), object.mat.emission[0], object.mat.emission[1], object.mat.emission[2]));
+    call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.roughness")), object.mat.emissionStrenght));
+    call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.roughness")), object.mat.roughness));
 }
 
 void shader::setUniformLight(scene::pointLight light, unsigned int index) {

@@ -15,19 +15,23 @@ namespace scene {
 
 	// properties
 
-	int shadowResolution = 20;
+	int shadowResolution = 50;
 
 	material::material() {
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = 1.0f;
+			this->emission[i] = 0.0f;
 		}
+		this->emissionStrenght = 0.0f;
 		this->roughness = 0.0f;
 	}
 
-	material::material(const std::initializer_list<float>& albedo, float roughness) {
+	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, float emissionStrenght, float roughness) {
 		for (int i = 0; i < 3; i++) {
-			this->albedo[i] = *(albedo.begin());
+			this->albedo[i] = *(albedo.begin() + i);
+			this->emission[i] = *(emission.begin() + i);
 		}
+		this->emissionStrenght = emissionStrenght;
 		this->roughness = roughness;
 	}
 

@@ -96,6 +96,8 @@ void guiManager::materialEdit() {
     }
 
     ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
+    ImGui::ColorPicker3("Emission", scene::materials[scene::selectedMaterialIndex].emission);
+    ImGui::DragFloat("Emission Strenght", &scene::materials[scene::selectedMaterialIndex].emissionStrenght);
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
 
     if (scene::selectedMaterialIndex != -1) {
@@ -147,6 +149,8 @@ void guiManager::showGUI() {
 void guiManager::hideGUI() {
     show = false;
 }
+
+
 
 void guiManager::render() {
     if (show) {

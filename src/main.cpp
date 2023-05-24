@@ -135,7 +135,7 @@ int main(void)
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", monitor, NULL);
+    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -188,8 +188,8 @@ int main(void)
         shader.bind();
         shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
 
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, 1.0f)));
-        scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 10.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f, 0.0f}, 0.0f, 1.0f)));
+        scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;
         scene::updateObjects();

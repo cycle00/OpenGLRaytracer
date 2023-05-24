@@ -11,10 +11,12 @@ class shader;
 namespace scene {
 	struct material {
 		float albedo[3];
+		float emission[3];
+		float emissionStrenght;
 		float roughness;
 
 		material();
-		material(const std::initializer_list<float>& albedo, float roughness); // add more as needed
+		material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, float emissionStrenght, float roughness); // add more as needed
 	};
 
 	struct object {
