@@ -3,7 +3,7 @@
 #include <stdexcept>
 #include <vector>
 
-#include "renderer.h"
+#include "../renderer.h"
 
 // defines what a vertex element is
 struct vertexBufferElement {

@@ -1,7 +1,7 @@
 #include "vertexArray.h"
 
 #include "vertexBufferLayout.h"
-#include "renderer.h"
+#include "../renderer.h"
 
 // generate the vao
 vertexArray::vertexArray() {

@@ -60,6 +60,9 @@ uniform float u_aspectRatio;
 uniform vec3 u_cameraPos;
 uniform mat4 u_rotationMatrix;
 uniform float u_time; // seed
+uniform sampler2D u_screenTexture;
+uniform bool u_directPass;
+uniform int u_accumulatedPasses;
 
 uniform int u_shadowResolution;
 uniform PointLight u_lights[4];
@@ -207,12 +210,14 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 		SurfacePoint hitPoint;
 		if (raycast(Ray(rayOrigin, rayDirection), hitPoint)) {
 			// emission
-			gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
+			//gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
 
 			gi += energy * directIllumination(hitPoint, seed);
-			
+
+			float roulette = rand(hitPoint.position.xy + vec2(hitPoint.position.y) + vec2(seed, i));
+
 			// diffuse reflections
-			if (hitPoint.material.albedo != vec3(0)) {
+			if (hitPoint.material.albedo != vec3(0) && roulette < 1) {
 				rayOrigin = hitPoint.position + hitPoint.normal * EPSILON;
 				rayDirection = sampleHemisphere(hitPoint.normal, 1.0, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
 				energy *= hitPoint.material.albedo * clamp(dot(hitPoint.normal, rayDirection), 0.0, 1.0);
@@ -228,10 +233,31 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 
 void main() {
 	vec2 centeredUV = (fragUV * 2 - vec2(1)) * vec2(u_aspectRatio, 1.0); // centers the uv so that rays diverge from the center, not a corner and calculates divergence
-	vec3 rayDir = (normalize(vec4(centeredUV, -1.0, 0.0)) * u_rotationMatrix).xyz;
-	Ray cameraRay = Ray(u_cameraPos, rayDir);
 
-	fragColor = vec4(calculateGI(cameraRay, u_time), 1.0);
+	if (u_directPass) {
+		vec3 rayDir = (normalize(vec4(centeredUV, -1.0, 0.0)) * u_rotationMatrix).xyz;
+		Ray cameraRay = Ray(u_cameraPos, rayDir);
+
+		fragColor = texture(u_screenTexture, fragUV);
+		float passes = float(u_accumulatedPasses);
+		fragColor.x /= passes;
+		fragColor.y /= passes;
+		fragColor.z /= passes;
+	}
+	else {
+		float blur = 0.002f;
+
+		if (u_accumulatedPasses > 0) centeredUV += vec2(rand(vec2(1, u_time) + fragUV.xy) * blur - blur / 2, rand(vec2(2, u_time) + fragUV.xy) * blur - blur / 2);
+		vec3 rayDir = (normalize(vec4(centeredUV, -1.0, 0.0)) * u_rotationMatrix).xyz;
+		Ray cameraRay = Ray(u_cameraPos, rayDir);
+
+		vec3 color = calculateGI(cameraRay, u_time);
+		fragColor = vec4(color, 1.0);
+
+		if (u_accumulatedPasses > 0) {
+			fragColor += texture(u_screenTexture, fragUV);
+		}
+	}
 }
 // --------------------------------------------------
 

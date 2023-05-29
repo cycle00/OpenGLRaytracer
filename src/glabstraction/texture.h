@@ -1,6 +1,6 @@
 #pragma once
 
-#include "renderer.h"
+#include "../renderer.h"
 
 class texture {
 private:

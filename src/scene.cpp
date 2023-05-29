@@ -1,6 +1,6 @@
 #include "scene.h"
 
-#include "shader.h"
+#include "glabstraction/shader.h"
 
 namespace scene {
 	std::vector<object> objects;
@@ -14,7 +14,8 @@ namespace scene {
 	int selectedMaterialIndex = -1;
 
 	// properties
-
+	int screenWidth = 0;
+	int screenHeight = 0;
 	int shadowResolution = 50;
 
 	material::material() {

@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "scene.h"
+#include "../scene.h"
 
 struct shaderProgramSource {
 	std::string vertexSource;

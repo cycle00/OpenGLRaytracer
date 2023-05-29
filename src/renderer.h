@@ -2,9 +2,9 @@
 
 #include <GL/glew.h>
 
-#include "indexBuffer.h"
-#include "shader.h"
-#include "vertexArray.h"
+#include "glabstraction/indexBuffer.h"
+#include "glabstraction/shader.h"
+#include "glabstraction/vertexArray.h"
 
 // debugging stuff
 #define assert(x) if (!(x)) __debugbreak();

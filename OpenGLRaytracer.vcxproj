@@ -159,13 +159,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\glabstraction\frameBuffer.cpp" />
     <ClCompile Include="src\guiManager.cpp" />
-    <ClCompile Include="src\indexBuffer.cpp" />
+    <ClCompile Include="src\glabstraction\indexBuffer.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\renderer.cpp" />
     <ClCompile Include="src\scene.cpp" />
-    <ClCompile Include="src\shader.cpp" />
-    <ClCompile Include="src\texture.cpp" />
+    <ClCompile Include="src\glabstraction\shader.cpp" />
+    <ClCompile Include="src\glabstraction\texture.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui_demo.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui_draw.cpp" />
@@ -174,20 +175,21 @@
     <ClCompile Include="src\vendor\imgui\imgui_tables.cpp" />
     <ClCompile Include="src\vendor\imgui\imgui_widgets.cpp" />
     <ClCompile Include="src\vendor\stb\stb_image.cpp" />
-    <ClCompile Include="src\vertexArray.cpp" />
-    <ClCompile Include="src\vertexBuffer.cpp" />
+    <ClCompile Include="src\glabstraction\vertexArray.cpp" />
+    <ClCompile Include="src\glabstraction\vertexBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="res\shaders\basic.shader" />
     <None Include="res\shaders\raytrace.shader" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\glabstraction\frameBuffer.h" />
     <ClInclude Include="src\guiManager.h" />
-    <ClInclude Include="src\indexBuffer.h" />
+    <ClInclude Include="src\glabstraction\indexBuffer.h" />
     <ClInclude Include="src\renderer.h" />
     <ClInclude Include="src\scene.h" />
-    <ClInclude Include="src\shader.h" />
-    <ClInclude Include="src\texture.h" />
+    <ClInclude Include="src\glabstraction\shader.h" />
+    <ClInclude Include="src\glabstraction\texture.h" />
     <ClInclude Include="src\vendor\imgui\imconfig.h" />
     <ClInclude Include="src\vendor\imgui\imgui.h" />
     <ClInclude Include="src\vendor\imgui\imgui_impl_glfw.h" />
@@ -198,9 +200,9 @@
     <ClInclude Include="src\vendor\imgui\imstb_textedit.h" />
     <ClInclude Include="src\vendor\imgui\imstb_truetype.h" />
     <ClInclude Include="src\vendor\stb\stb_image.h" />
-    <ClInclude Include="src\vertexBuffer.h" />
-    <ClInclude Include="src\vertexArray.h" />
-    <ClInclude Include="src\vertexBufferLayout.h" />
+    <ClInclude Include="src\glabstraction\vertexBuffer.h" />
+    <ClInclude Include="src\glabstraction\vertexArray.h" />
+    <ClInclude Include="src\glabstraction\vertexBufferLayout.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\textures\obamna.png" />

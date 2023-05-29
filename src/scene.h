@@ -51,6 +51,7 @@ namespace scene {
 	extern int selectedMaterialIndex;
 	
 	// properties
+	extern int screenWidth, screenHeight;
 	extern int shadowResolution;
 
 	void updateObjects();

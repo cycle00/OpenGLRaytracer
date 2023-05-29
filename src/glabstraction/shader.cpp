@@ -5,7 +5,7 @@
 #include <sstream>
 #include <string>
 
-#include "renderer.h"
+#include "../renderer.h"
 
 shader::shader() : m_rendererID(0) {
 

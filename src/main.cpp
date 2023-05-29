@@ -11,14 +11,15 @@
 
 #include "renderer.h"
 
-#include "guiManager.h"
-#include "indexBuffer.h"
-#include "shader.h"
-#include "texture.h"
-#include "vertexArray.h"
-#include "vertexBuffer.h"
-#include "vertexBufferLayout.h"
+#include "glabstraction/frameBuffer.h"
+#include "glabstraction/indexBuffer.h"
+#include "glabstraction/shader.h"
+#include "glabstraction/texture.h"
+#include "glabstraction/vertexArray.h"
+#include "glabstraction/vertexBuffer.h"
+#include "glabstraction/vertexBufferLayout.h"
 
+#include "guiManager.h"
 #include "scene.h"
 
 bool mouseAbsorbed = false;
@@ -129,13 +130,15 @@ int main(void)
     // Create a borderless fullscreen mode window and its OpenGL context
     GLFWmonitor* monitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+    scene::screenWidth = mode->width;
+    scene::screenHeight = mode->height;
 
     glfwWindowHint(GLFW_RED_BITS, mode->redBits);
     glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    window = glfwCreateWindow(mode->width, mode->height, "OpenGL Window", NULL, NULL);
+    window = glfwCreateWindow(scene::screenWidth, scene::screenHeight, "OpenGL Window", monitor, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -188,6 +191,13 @@ int main(void)
         shader.bind();
         shader.setUniform1f("u_aspectRatio", (float)mode->width / mode->height);
 
+        frameBuffer fb;
+        if (!fb.checkStatus()) {
+            std::cout << "Framebuffer is not complete!" << std::endl;
+            return -1;
+        }
+        shader.setUniform1i("u_screenTexture", 0);
+
         scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f, 0.0f}, 0.0f, 1.0f)));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
@@ -195,17 +205,16 @@ int main(void)
         scene::updateObjects();
         scene::updateLights();
 
-        // unbind vao, vb, ibo, and shader
-        va.unbind();
-        vb.unbind();
-        ib.unbind();
-        shader.unbind();
-
         renderer renderer;
 
         guiManager gui(window);
 
+        call(glViewport(0, 0, scene::screenWidth, scene::screenHeight));
+        call(glDisable(GL_DEPTH_TEST));
+
         double deltaTime = 0.0f;
+        int accumulatedPasses = 0;
+        bool refresh = false;
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window)) {
             double preTime = glfwGetTime();
@@ -214,9 +223,15 @@ int main(void)
             
             if (mouseAbsorbed) {
                 if (handleMovement(window, deltaTime, cameraPos, cameraPitch, cameraYaw, &rotationMatrix)) {
+                    refresh = true;
                     shader.setUniform3f("u_cameraPos", cameraPos.x, cameraPos.y, cameraPos.z);
                     shader.setUniformMat4f("u_rotationMatrix", rotationMatrix);
                 }
+            }
+            if (refresh) {
+                accumulatedPasses = 0;
+                refresh = false;
+                shader.setUniform1i("u_accumulatedPasses", accumulatedPasses);
             }
             
             // Render here
@@ -224,10 +239,17 @@ int main(void)
 
             gui.newFrame();
 
-            shader.bind();
             shader.setUniform1f("u_time", preTime);
             scene::setProperties();
 
+            fb.bind();
+            shader.setUniform1i("u_directPass", 0);
+            renderer.draw(va, ib, shader);
+            accumulatedPasses++;
+
+            fb.unbind();
+            shader.setUniform1i("u_directPass", 1);
+            shader.setUniform1i("u_accumulatedPasses", accumulatedPasses);
             renderer.draw(va, ib, shader);
 
             gui.render();
