@@ -22,17 +22,19 @@ namespace scene {
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = 1.0f;
 			this->emission[i] = 0.0f;
+			this->specular[i] = 0.0f;
 		}
-		this->emissionStrenght = 0.0f;
-		this->roughness = 0.0f;
+		this->emissionStrength = 0.0f;
+		this->roughness = 1.0f;
 	}
 
-	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, float emissionStrenght, float roughness) {
+	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness) {
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = *(albedo.begin() + i);
 			this->emission[i] = *(emission.begin() + i);
+			this->specular[i] = *(specular.begin() + i);
 		}
-		this->emissionStrenght = emissionStrenght;
+		this->emissionStrength = emissionStrength;
 		this->roughness = roughness;
 	}
 
@@ -97,6 +99,7 @@ namespace scene {
 
 	void removeObject(unsigned int index) {
 		objects.erase(objects.begin() + index);
+		(*currShader).setUniformObject(object(), index); // erases from world
 	}
 
 	void addLight(pointLight l) {
@@ -105,5 +108,6 @@ namespace scene {
 
 	void removeLight(unsigned int index) {
 		lights.erase(lights.begin() + index);
+		(*currShader).setUniformLight(pointLight(), index); // erases from world
 	}
 }

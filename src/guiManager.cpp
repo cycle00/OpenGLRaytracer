@@ -1,6 +1,7 @@
 #include "guiManager.h"
 
 bool guiManager::show = true;
+bool guiManager::worldModified = false;
 
 guiManager::guiManager(GLFWwindow* window) : window(window) {
     IMGUI_CHECKVERSION();
@@ -60,7 +61,7 @@ void guiManager::objectEdit() {
     ImGui::Spacing();
     if (ImGui::Button("Delete Object")) {
         showObjectEdit = false;
-        scene::removeObject(scene::selectedObjectIndex); // bug - does not delete object in world
+        scene::removeObject(scene::selectedObjectIndex);
     }
 
     ImGui::End();
@@ -97,7 +98,8 @@ void guiManager::materialEdit() {
 
     ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
     ImGui::ColorPicker3("Emission", scene::materials[scene::selectedMaterialIndex].emission);
-    ImGui::DragFloat("Emission Strenght", &scene::materials[scene::selectedMaterialIndex].emissionStrenght);
+    ImGui::ColorPicker3("Specular", scene::materials[scene::selectedMaterialIndex].specular);
+    ImGui::DragFloat("Emission Strength", &scene::materials[scene::selectedMaterialIndex].emissionStrength);
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
 
     if (scene::selectedMaterialIndex != -1) {

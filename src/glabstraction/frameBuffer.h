@@ -8,6 +8,7 @@ class frameBuffer {
 private:
 	unsigned int m_rendererID;
 	unsigned int screenTexture;
+
 public:
 	frameBuffer();
 	~frameBuffer();

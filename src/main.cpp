@@ -138,7 +138,7 @@ int main(void)
     glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
     glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
 
-    window = glfwCreateWindow(scene::screenWidth, scene::screenHeight, "OpenGL Window", monitor, NULL);
+    window = glfwCreateWindow(scene::screenWidth, scene::screenHeight, "OpenGL Window", NULL, NULL);
     if (!window) {
         glfwTerminate();
         return -1;
@@ -170,9 +170,6 @@ int main(void)
             2, 3, 0
         };
 
-        call(glEnable(GL_BLEND));
-        call(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
-
         // initialize a vertex array
         vertexArray va;
         // Generate a buffer and bind the vertices to that buffer
@@ -196,9 +193,10 @@ int main(void)
             std::cout << "Framebuffer is not complete!" << std::endl;
             return -1;
         }
+
         shader.setUniform1i("u_screenTexture", 0);
 
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f, 0.0f}, 0.0f, 1.0f)));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 1.0f, 1.0f }, 0.0f, 0.0f)));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;
@@ -235,7 +233,6 @@ int main(void)
             }
             
             // Render here
-            renderer.clear();
 
             gui.newFrame();
 

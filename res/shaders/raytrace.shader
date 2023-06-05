@@ -31,6 +31,7 @@ struct Ray {
 struct Material {
 	vec3 albedo;
 	vec3 emission;
+	vec3 specular;
 	float emissionStrength;
 	float roughness;
 };
@@ -132,7 +133,7 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			minHitDist = hitDist;
 			hitPoint.position = ray.origin + ray.direction * minHitDist;
 			hitPoint.normal = vec3(0, 1, 0);
-			hitPoint.material = Material(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), 0.0f, 1.0);
+			hitPoint.material = Material(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), 0.0f, 1.0);
 		}
 	}
 
@@ -175,7 +176,7 @@ vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 
 		// illumination = light_color * object_albedo * cos(angle_between_normal_and_light_direction) -> (dot(normal, light_direction))
 		float diffuse = clamp(dot(hitPoint.normal, normalize(light.position - hitPoint.position)), 0.0, 1.0);
-		if (diffuse > EPSILON) { // or if roughness is less than one (but that doesnt matter rn)
+		if (diffuse > EPSILON || hitPoint.material.roughness < 1.0) {
 			// this is basically directly taken from https://github.com/carl-vbn/opengl-raytracing/blob/main/shaders/fragment.glsl because i dont know a better way to find the right amound of shadow rays
 			int shadowRays = int(u_shadowResolution * light.radius * light.radius / (lightDistance * lightDistance) + 1);
 			int shadowRayHits = 0;
@@ -206,18 +207,38 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 	vec3 rayOrigin = cameraRay.origin;
 	vec3 rayDirection = cameraRay.direction;
 	vec3 energy = vec3(1);
-	for (int i = 0; i < 50; i++) {
+	for (int i = 0; i < 5; i++) {
 		SurfacePoint hitPoint;
 		if (raycast(Ray(rayOrigin, rayDirection), hitPoint)) {
 			// emission
-			//gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
+			gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
 
 			gi += energy * directIllumination(hitPoint, seed);
+			
+			float specChance = dot(hitPoint.material.specular, vec3(1.0 / 3.0));
+			float diffChance = dot(hitPoint.material.albedo, vec3(1.0 / 3.0));
 
-			float roulette = rand(hitPoint.position.xy + vec2(hitPoint.position.y) + vec2(seed, i));
+			float sum = specChance + diffChance;
+			specChance /= sum;
+			diffChance /= sum;
 
+			float roulette = rand(hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+			// specular reflections
+			if (roulette < specChance) {
+				float smoothness = 1.0 - hitPoint.material.roughness;
+				float alpha = pow(1000.0, smoothness * smoothness);
+				if (smoothness == 1.0) {
+					rayDirection = reflect(rayDirection, hitPoint.normal);
+				}
+				else {
+					rayDirection = sampleHemisphere(reflect(rayDirection, hitPoint.normal), alpha, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+				}
+				rayOrigin = hitPoint.position + rayDirection * EPSILON;
+				float f = (alpha + 2) / (alpha + 1);
+				energy *= hitPoint.material.specular * clamp(dot(hitPoint.normal, rayDirection) * f, 0.0, 1.0);
+			}
 			// diffuse reflections
-			if (hitPoint.material.albedo != vec3(0) && roulette < 1) {
+			else if (diffChance > 0 && roulette < sum) {
 				rayOrigin = hitPoint.position + hitPoint.normal * EPSILON;
 				rayDirection = sampleHemisphere(hitPoint.normal, 1.0, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
 				energy *= hitPoint.material.albedo * clamp(dot(hitPoint.normal, rayDirection), 0.0, 1.0);
@@ -226,9 +247,12 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 				break;
 			}
 		}
+		else {
+			break;
+		}
 	}
 
-	return gi;
+	return gi; // debug, should be gi
 }
 
 void main() {

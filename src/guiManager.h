@@ -23,6 +23,7 @@ public:
 	~guiManager();
 
 	static bool show;
+	static bool worldModified;
 
 	void newFrame();
 	void objectEdit();
