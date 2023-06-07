@@ -62,16 +62,20 @@ uniform vec3 u_cameraPos;
 uniform mat4 u_rotationMatrix;
 uniform float u_time; // seed
 uniform sampler2D u_screenTexture;
+uniform sampler2D u_skyboxTexture;
 uniform bool u_directPass;
 uniform int u_accumulatedPasses;
 
 uniform int u_shadowResolution;
+uniform int u_lightBounces;
+uniform float u_skyboxGamma;
+//uniform float u_skyboxStrength;
 uniform PointLight u_lights[4];
 uniform Object u_objects[64];
 
 // https://thebookofshaders.com/10/
 float rand(vec2 seed) {
-	return fract(sin(dot(seed, vec2(12.9898, 78.233))) *43758.5453123);
+	return fract(sin(dot(seed, vec2(12.9898, 78.233))) * 43758.5453123);
 }
 
 bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDistance) {
@@ -167,6 +171,15 @@ vec3 sampleHemisphere(vec3 normal, float alpha, vec2 seed)
 	return getTangentSpace(normal) * tangentSpaceDir;
 }
 
+// https://en.wikipedia.org/wiki/UV_mapping
+// https://en.wikipedia.org/wiki/Gamma_correction
+vec3 sampleSkybox(vec3 dir) {
+	// V_out = AV_in^gamma
+	// u = 0.5 + (arctan2(dir_z, dir_x))/2pi -> but since we are inside the sphere, should be dir_x, dir_z
+	// v = 0.5 + (arcsin(dir_y))/pi
+	return 0.4 * pow(texture(u_skyboxTexture, vec2(0.5 + atan(dir.x, dir.z) / (2 * PI), 0.5 + asin(dir.y) / PI)).xyz, vec3(1 / u_skyboxGamma));
+}
+
 vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 	vec3 illumination = vec3(0);
 	for (int i = 0; i < u_lights.length(); i++) {
@@ -195,7 +208,7 @@ vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 			}
 
 			float attenuation = lightDistance * lightDistance;
-			illumination += light.color * light.power * diffuse * hitPoint.material.albedo * (1.0-float(shadowRayHits)/shadowRays) / attenuation;
+			illumination += light.color * light.power * diffuse * hitPoint.material.albedo * (1.0 - float(shadowRayHits) / shadowRays) / attenuation;
 		}
 	}
 	return illumination;
@@ -207,14 +220,16 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 	vec3 rayOrigin = cameraRay.origin;
 	vec3 rayDirection = cameraRay.direction;
 	vec3 energy = vec3(1);
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < u_lightBounces; i++) {
 		SurfacePoint hitPoint;
 		if (raycast(Ray(rayOrigin, rayDirection), hitPoint)) {
 			// emission
 			gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
 
+			// DI
 			gi += energy * directIllumination(hitPoint, seed);
-			
+
+			// II
 			float specChance = dot(hitPoint.material.specular, vec3(1.0 / 3.0));
 			float diffChance = dot(hitPoint.material.albedo, vec3(1.0 / 3.0));
 
@@ -248,6 +263,8 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 			}
 		}
 		else {
+			// skybox
+			gi += energy * sampleSkybox(rayDirection);
 			break;
 		}
 	}

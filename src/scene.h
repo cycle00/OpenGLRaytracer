@@ -10,6 +10,7 @@ class shader;
 
 namespace scene {
 	struct material {
+		int id;
 		float albedo[3];
 		float emission[3];
 		float specular[3];
@@ -18,6 +19,7 @@ namespace scene {
 
 		material();
 		material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness); // add more as needed
+		bool operator==(material m);
 	};
 
 	struct object {
@@ -54,6 +56,8 @@ namespace scene {
 	// properties
 	extern int screenWidth, screenHeight;
 	extern int shadowResolution;
+	extern int lightBounces;
+	extern float skyboxGamma;
 
 	void updateObjects();
 	void updateLights();

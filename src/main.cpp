@@ -170,6 +170,10 @@ int main(void)
             2, 3, 0
         };
 
+        // skybox whatever
+        texture skybox("res/skyboxes/belfast_sunset_puresky_4k.hdr");
+        skybox.bind(1);
+
         // initialize a vertex array
         vertexArray va;
         // Generate a buffer and bind the vertices to that buffer
@@ -195,8 +199,10 @@ int main(void)
         }
 
         shader.setUniform1i("u_screenTexture", 0);
+        shader.setUniform1i("u_skyboxTexture", 1);
 
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::material({ 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f, 0.0f}, { 1.0f, 1.0f, 1.0f }, 0.0f, 0.0f)));
+        scene::materials.push_back(scene::material({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, 0.0f, 0.0f));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::materials[0]));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;

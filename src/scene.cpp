@@ -17,8 +17,11 @@ namespace scene {
 	int screenWidth = 0;
 	int screenHeight = 0;
 	int shadowResolution = 50;
+	int lightBounces = 5;
+	float skyboxGamma = 2.2f;
 
 	material::material() {
+		this->id = materials.size();
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = 1.0f;
 			this->emission[i] = 0.0f;
@@ -29,6 +32,7 @@ namespace scene {
 	}
 
 	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness) {
+		this->id = materials.size();
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = *(albedo.begin() + i);
 			this->emission[i] = *(emission.begin() + i);
@@ -36,6 +40,15 @@ namespace scene {
 		}
 		this->emissionStrength = emissionStrength;
 		this->roughness = roughness;
+	}
+
+	bool material::operator ==(material m) {
+		if (this->albedo == m.albedo &&
+			this->emission == m.emission &&
+			this->specular == m.specular &&
+			this->emissionStrength == m.emissionStrength &&
+			this->roughness == m.roughness) return true;
+		else return false;
 	}
 
 	object::object() {
@@ -78,7 +91,9 @@ namespace scene {
 
 	void setProperties() {
 		(*currShader).setUniform1i("u_shadowResolution", shadowResolution);
-		// others like light bounces, skybox settings, etc
+		(*currShader).setUniform1i("u_lightBounces", lightBounces);
+		(*currShader).setUniform1f("u_skyboxGamma", skyboxGamma);
+		// other properties
 	}
 
 	void updateObjects() {

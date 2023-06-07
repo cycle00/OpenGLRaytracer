@@ -137,7 +137,7 @@ void guiManager::lightEdit() {
     ImGui::Spacing();
     if (ImGui::Button("Delete Light")) {
         showLightEdit = false;
-        scene::removeLight(scene::selectedLightIndex); // bug - does not delete light in world
+        scene::removeLight(scene::selectedLightIndex);
     }
 
     ImGui::End();
@@ -151,8 +151,6 @@ void guiManager::showGUI() {
 void guiManager::hideGUI() {
     show = false;
 }
-
-
 
 void guiManager::render() {
     if (show) {
@@ -168,6 +166,7 @@ void guiManager::render() {
         for (unsigned int i = 0; i < scene::objects.size(); i++) {
             if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
                 scene::selectedObjectIndex = i;
+                scene::selectedMaterialIndex = scene::objects[i].mat.id;
                 showObjectEdit = true;
             }
         }
