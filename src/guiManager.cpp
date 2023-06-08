@@ -37,6 +37,8 @@ void guiManager::objectEdit() {
         scene::selectedObjectIndex = scene::objects.size() - 1;
     }
 
+    scene::object prev = scene::objects[scene::selectedObjectIndex];
+
     ImGui::Text("Type");
     ImGui::RadioButton("None", (int*)&scene::objects[scene::selectedObjectIndex].type, 0); ImGui::SameLine();
     ImGui::RadioButton("Sphere", (int*)&scene::objects[scene::selectedObjectIndex].type, 1); ImGui::SameLine();
@@ -59,9 +61,15 @@ void guiManager::objectEdit() {
     }
 
     ImGui::Spacing();
+    
+    if (scene::objects[scene::selectedObjectIndex] != prev) {
+        worldModified = true;
+    }
+
     if (ImGui::Button("Delete Object")) {
         showObjectEdit = false;
         scene::removeObject(scene::selectedObjectIndex);
+        scene::selectedObjectIndex--;
     }
 
     ImGui::End();
@@ -75,6 +83,7 @@ void guiManager::materialList() {
     if (ImGui::Button("+##mat")) {
         scene::selectedMaterialIndex = -1;
         showMaterialEdit = true;
+        worldModified = true;
     }
     ImGui::BeginChild("Materials", ImVec2(200, 100), true);
     for (unsigned int i = 0; i < scene::materials.size(); i++) {
@@ -96,6 +105,8 @@ void guiManager::materialEdit() {
         scene::selectedMaterialIndex = scene::materials.size() - 1;
     }
 
+    scene::material prev = scene::materials[scene::selectedMaterialIndex];
+
     ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
     ImGui::ColorPicker3("Emission", scene::materials[scene::selectedMaterialIndex].emission);
     ImGui::ColorPicker3("Specular", scene::materials[scene::selectedMaterialIndex].specular);
@@ -103,7 +114,11 @@ void guiManager::materialEdit() {
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
 
     if (scene::selectedMaterialIndex != -1) {
-        scene::objects[scene::selectedObjectIndex].mat = scene::materials[scene::selectedMaterialIndex];
+        scene::objects[scene::selectedObjectIndex].mat = &scene::materials[scene::selectedMaterialIndex];
+    }
+
+    if (scene::materials[scene::selectedMaterialIndex] != prev) {
+        worldModified = true;
     }
 
     ImGui::End();
@@ -118,6 +133,8 @@ void guiManager::lightEdit() {
         scene::addLight(l);
         scene::selectedLightIndex = scene::lights.size() - 1;
     }
+
+    scene::pointLight prev = scene::lights[scene::selectedLightIndex];
 
     ImGui::Text("Position");
     ImGui::DragFloat3("##position", scene::lights[scene::selectedLightIndex].position, 0.005f);
@@ -135,10 +152,17 @@ void guiManager::lightEdit() {
     ImGui::DragFloat("##reach", &scene::lights[scene::selectedLightIndex].reach, 0.005f);
 
     ImGui::Spacing();
+    
+    if (scene::lights[scene::selectedLightIndex] != prev) {
+        worldModified = true;
+    }
+
     if (ImGui::Button("Delete Light")) {
         showLightEdit = false;
         scene::removeLight(scene::selectedLightIndex);
+        scene::selectedLightIndex--;
     }
+
 
     ImGui::End();
     scene::updateLights();
@@ -154,6 +178,7 @@ void guiManager::hideGUI() {
 
 void guiManager::render() {
     if (show) {
+        worldModified = false;
         ImGui::Begin("Ray Tracer");
         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
         ImGui::TextColored(ImVec4(1.0f, 0.8f, 1.0f, 1.0f), "Objects");
@@ -161,12 +186,13 @@ void guiManager::render() {
         if (ImGui::Button("+##obj")) {
             scene::selectedObjectIndex = -1;
             showObjectEdit = true;
+            worldModified = true;
         }
         ImGui::BeginChild("Objects", ImVec2(200, 100), true);
         for (unsigned int i = 0; i < scene::objects.size(); i++) {
             if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
                 scene::selectedObjectIndex = i;
-                scene::selectedMaterialIndex = scene::objects[i].mat.id;
+                scene::selectedMaterialIndex = (*scene::objects[i].mat).id;
                 showObjectEdit = true;
             }
         }
@@ -176,6 +202,7 @@ void guiManager::render() {
         if (ImGui::Button("+##light")) {
             scene::selectedLightIndex = -1;
             showLightEdit = true;
+            worldModified = true;
         }
         ImGui::BeginChild("Lights", ImVec2(200, 100), true);
         for (unsigned int i = 0; i < scene::lights.size(); i++) {
@@ -188,6 +215,11 @@ void guiManager::render() {
         // plane
 
         // shadow resolution and other uniform variables
+        ImGui::Spacing();
+        if (ImGui::DragInt("Shadow Resolution", &scene::shadowResolution)) worldModified = true;
+        if (ImGui::DragInt("Light Bounces", &scene::lightBounces)) worldModified = true;
+        if (ImGui::DragFloat("Skybox Gamma", &scene::skyboxGamma)) worldModified = true;
+        if (ImGui::DragFloat("Skybox Strength", &scene::skyboxStrength)) worldModified = true;
         ImGui::End();
 
         // everything here

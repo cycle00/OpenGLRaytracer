@@ -183,6 +183,7 @@
     <None Include="res\shaders\raytrace.shader" />
     <None Include="res\skyboxes\belfast_sunset_puresky_2k.hdr" />
     <None Include="res\skyboxes\belfast_sunset_puresky_4k.hdr" />
+    <None Include="res\skyboxes\kloppenheim_02_4k.hdr" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\glabstraction\frameBuffer.h" />

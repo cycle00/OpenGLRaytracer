@@ -70,6 +70,20 @@ bool handleMovement(GLFWwindow* window, double deltaTime, glm::vec3& cameraPosit
     float xOffset = (float)(mouseX - screenWidth / 2.0);
     float yOffset = (float)(mouseY - screenHeight / 2.0);
 
+    // the mouse breaks when im streaming with remote desktop so i added this
+    if (glfwGetKey(window, GLFW_KEY_UP)) {
+        yOffset -= 5;
+    }
+    if (glfwGetKey(window, GLFW_KEY_DOWN)) {
+        yOffset += 5;
+    }
+    if (glfwGetKey(window, GLFW_KEY_LEFT)) {
+        xOffset -= 5;
+    }
+    if (glfwGetKey(window, GLFW_KEY_RIGHT)) {
+        xOffset += 5;
+    }
+
     if (xOffset != 0.0f || yOffset != 0.0f) moved = true;
 
     cameraYaw += xOffset * 0.002f;
@@ -171,7 +185,7 @@ int main(void)
         };
 
         // skybox whatever
-        texture skybox("res/skyboxes/belfast_sunset_puresky_4k.hdr");
+        texture skybox("res/skyboxes/kloppenheim_02_4k.hdr");
         skybox.bind(1);
 
         // initialize a vertex array
@@ -201,8 +215,8 @@ int main(void)
         shader.setUniform1i("u_screenTexture", 0);
         shader.setUniform1i("u_skyboxTexture", 1);
 
-        scene::materials.push_back(scene::material({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, 0.0f, 0.0f));
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, scene::materials[0]));
+        scene::materials.push_back(scene::material({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, &scene::materials[0]));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;
@@ -256,6 +270,7 @@ int main(void)
             renderer.draw(va, ib, shader);
 
             gui.render();
+            if (gui.worldModified) refresh = true;
 
             // Swap front and back buffers
             glfwSwapBuffers(window);

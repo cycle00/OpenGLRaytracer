@@ -20,16 +20,18 @@ namespace scene {
 		material();
 		material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness); // add more as needed
 		bool operator==(material m);
+		bool operator!=(material m);
 	};
 
 	struct object {
 		unsigned int type;
 		float position[3];
 		float scale[3];
-		material mat;
+		material* mat;
 
 		object();
-		object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material mat);
+		object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material* mat);
+		bool operator!=(object o);
 	};
 
 	struct pointLight {
@@ -41,6 +43,7 @@ namespace scene {
 
 		pointLight();
 		pointLight(const std::initializer_list<float>& position, float radius, const std::initializer_list<float>& color, float power, float reach);
+		bool operator!=(pointLight l);
 	};
 
 	extern std::vector<object> objects;
@@ -58,6 +61,7 @@ namespace scene {
 	extern int shadowResolution;
 	extern int lightBounces;
 	extern float skyboxGamma;
+	extern float skyboxStrength;
 
 	void updateObjects();
 	void updateLights();

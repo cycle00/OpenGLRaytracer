@@ -69,7 +69,7 @@ uniform int u_accumulatedPasses;
 uniform int u_shadowResolution;
 uniform int u_lightBounces;
 uniform float u_skyboxGamma;
-//uniform float u_skyboxStrength;
+uniform float u_skyboxStrength;
 uniform PointLight u_lights[4];
 uniform Object u_objects[64];
 
@@ -174,10 +174,11 @@ vec3 sampleHemisphere(vec3 normal, float alpha, vec2 seed)
 // https://en.wikipedia.org/wiki/UV_mapping
 // https://en.wikipedia.org/wiki/Gamma_correction
 vec3 sampleSkybox(vec3 dir) {
+	if (u_skyboxStrength == 0.0) return vec3(0);
 	// V_out = AV_in^gamma
 	// u = 0.5 + (arctan2(dir_z, dir_x))/2pi -> but since we are inside the sphere, should be dir_x, dir_z
 	// v = 0.5 + (arcsin(dir_y))/pi
-	return 0.4 * pow(texture(u_skyboxTexture, vec2(0.5 + atan(dir.x, dir.z) / (2 * PI), 0.5 + asin(dir.y) / PI)).xyz, vec3(1 / u_skyboxGamma));
+	return u_skyboxStrength * pow(texture(u_skyboxTexture, vec2(0.5 + atan(dir.x, dir.z) / (2 * PI), 0.5 + asin(dir.y) / PI)).xyz, vec3(1 / u_skyboxGamma));
 }
 
 vec3 directIllumination(SurfacePoint hitPoint, float seed) {

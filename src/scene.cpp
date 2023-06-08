@@ -1,6 +1,12 @@
 #include "scene.h"
 
+#include <algorithm>
+
 #include "glabstraction/shader.h"
+
+bool compare3f(float* f1, float* f2) {
+	return (f1[0] == f2[0] && f1[1] == f2[1] && f1[2] == f2[2]);
+}
 
 namespace scene {
 	std::vector<object> objects;
@@ -19,6 +25,7 @@ namespace scene {
 	int shadowResolution = 50;
 	int lightBounces = 5;
 	float skyboxGamma = 2.2f;
+	float skyboxStrength = 0.4f;
 
 	material::material() {
 		this->id = materials.size();
@@ -42,12 +49,21 @@ namespace scene {
 		this->roughness = roughness;
 	}
 
-	bool material::operator ==(material m) {
-		if (this->albedo == m.albedo &&
-			this->emission == m.emission &&
-			this->specular == m.specular &&
+	bool material::operator==(material m) {
+		if (compare3f(this->albedo, m.albedo) &&
+			compare3f(this->emission, m.emission) &&
+			compare3f(this->specular, m.specular) &&
 			this->emissionStrength == m.emissionStrength &&
 			this->roughness == m.roughness) return true;
+		else return false;
+	}
+
+	bool material::operator!=(material m) {
+		if (!compare3f(this->albedo, m.albedo) ||
+			!compare3f(this->emission, m.emission) ||
+			!compare3f(this->specular, m.specular) ||
+			this->emissionStrength != m.emissionStrength ||
+			this->roughness != m.roughness) return true;
 		else return false;
 	}
 
@@ -57,16 +73,24 @@ namespace scene {
 			this->scale[i] = 1.0f;
 		}
 		this->type = 0;
-		this->mat = material();
+		this->mat = new material();
 	}
 
-	object::object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material mat) {
+	object::object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material* mat) {
 		for (int i = 0; i < 3; i++) {
 			this->position[i] = *(position.begin() + i);
 			this->scale[i] = *(scale.begin() + i);
 		}
 		this->type = type;
 		this->mat = mat;
+	}
+
+	bool object::operator!=(object o) {
+		if (!compare3f(this->position, o.position) ||
+			!compare3f(this->scale, o.scale) ||
+			this->type != o.type ||
+			*(this->mat) != *o.mat) return true;
+		return false;
 	}
 
 	pointLight::pointLight() {
@@ -89,10 +113,20 @@ namespace scene {
 		this->reach = reach;
 	}
 
+	bool pointLight::operator!=(pointLight l) {
+		if (!compare3f(this->color, l.color) ||
+			!compare3f(this->position, l.position) ||
+			this->radius != l.radius ||
+			this->power != l.power ||
+			this->reach != l.reach) return true;
+		else return false;
+	}
+
 	void setProperties() {
 		(*currShader).setUniform1i("u_shadowResolution", shadowResolution);
 		(*currShader).setUniform1i("u_lightBounces", lightBounces);
 		(*currShader).setUniform1f("u_skyboxGamma", skyboxGamma);
+		(*currShader).setUniform1f("u_skyboxStrength", skyboxStrength);
 		// other properties
 	}
 
