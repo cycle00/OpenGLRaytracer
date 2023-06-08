@@ -89,6 +89,8 @@ void guiManager::materialList() {
     for (unsigned int i = 0; i < scene::materials.size(); i++) {
         if (ImGui::SmallButton(std::string("Material ").append(std::to_string(i)).c_str())) {
             scene::selectedMaterialIndex = i;
+            scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
+            worldModified = true;
             showMaterialEdit = true;
         }
     }
@@ -100,9 +102,9 @@ void guiManager::materialEdit() {
     ImGui::Begin("Material Editor", &showMaterialEdit);
 
     if (scene::selectedMaterialIndex == -1) {
-        scene::material m = scene::material();
-        scene::materials.push_back(m);
+        scene::materials.push_back(scene::material());
         scene::selectedMaterialIndex = scene::materials.size() - 1;
+        scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
     }
 
     scene::material prev = scene::materials[scene::selectedMaterialIndex];
@@ -112,10 +114,6 @@ void guiManager::materialEdit() {
     ImGui::ColorPicker3("Specular", scene::materials[scene::selectedMaterialIndex].specular);
     ImGui::DragFloat("Emission Strength", &scene::materials[scene::selectedMaterialIndex].emissionStrength);
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
-
-    if (scene::selectedMaterialIndex != -1) {
-        scene::objects[scene::selectedObjectIndex].mat = &scene::materials[scene::selectedMaterialIndex];
-    }
 
     if (scene::materials[scene::selectedMaterialIndex] != prev) {
         worldModified = true;
@@ -192,7 +190,7 @@ void guiManager::render() {
         for (unsigned int i = 0; i < scene::objects.size(); i++) {
             if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
                 scene::selectedObjectIndex = i;
-                scene::selectedMaterialIndex = (*scene::objects[i].mat).id;
+                scene::selectedMaterialIndex = scene::objects[i].mat;
                 showObjectEdit = true;
             }
         }

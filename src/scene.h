@@ -27,10 +27,10 @@ namespace scene {
 		unsigned int type;
 		float position[3];
 		float scale[3];
-		material* mat;
+		int mat;
 
 		object();
-		object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material* mat);
+		object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, int materialID);
 		bool operator!=(object o);
 	};
 

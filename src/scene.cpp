@@ -73,23 +73,23 @@ namespace scene {
 			this->scale[i] = 1.0f;
 		}
 		this->type = 0;
-		this->mat = new material();
+		this->mat = 0;
 	}
 
-	object::object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, material* mat) {
+	object::object(unsigned int type, const std::initializer_list<float>& position, const std::initializer_list<float>& scale, int materialID) {
 		for (int i = 0; i < 3; i++) {
 			this->position[i] = *(position.begin() + i);
 			this->scale[i] = *(scale.begin() + i);
 		}
 		this->type = type;
-		this->mat = mat;
+		this->mat = materialID;
 	}
 
 	bool object::operator!=(object o) {
 		if (!compare3f(this->position, o.position) ||
 			!compare3f(this->scale, o.scale) ||
 			this->type != o.type ||
-			*(this->mat) != *o.mat) return true;
+			this->mat != o.mat) return true;
 		return false;
 	}
 
