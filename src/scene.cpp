@@ -12,12 +12,14 @@ namespace scene {
 	std::vector<object> objects;
 	std::vector<pointLight> lights;
 	std::vector<material> materials;
+	int planeMaterial = 0;
 
 	shader* currShader;
 
-	int selectedObjectIndex = -1;
-	int selectedLightIndex = -1;
-	int selectedMaterialIndex = -1;
+	int selectedObjectIndex = 0;
+	bool planeSelected = false;
+	int selectedLightIndex = 0;
+	int selectedMaterialIndex = 0;
 
 	// properties
 	int screenWidth = 0;
@@ -26,6 +28,7 @@ namespace scene {
 	int lightBounces = 5;
 	float skyboxGamma = 2.2f;
 	float skyboxStrength = 0.4f;
+	bool planeVisible = true;
 
 	material::material() {
 		this->id = materials.size();
@@ -127,6 +130,8 @@ namespace scene {
 		(*currShader).setUniform1i("u_lightBounces", lightBounces);
 		(*currShader).setUniform1f("u_skyboxGamma", skyboxGamma);
 		(*currShader).setUniform1f("u_skyboxStrength", skyboxStrength);
+		(*currShader).setUniform1i("u_planeVisible", planeVisible);
+		(*currShader).setUniformMaterial("u_planeMaterial", scene::materials[planeMaterial]);
 		// other properties
 	}
 

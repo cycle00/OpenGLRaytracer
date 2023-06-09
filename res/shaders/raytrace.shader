@@ -70,6 +70,8 @@ uniform int u_shadowResolution;
 uniform int u_lightBounces;
 uniform float u_skyboxGamma;
 uniform float u_skyboxStrength;
+uniform bool u_planeVisible;
+uniform Material u_planeMaterial;
 uniform PointLight u_lights[4];
 uniform Object u_objects[64];
 
@@ -131,13 +133,13 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 		// if (u_objects[i].type == 2)
 	}
 
-	if (planeIntersection(vec3(0, 1, 0), vec3(0, 0, 0), ray, hitDist)) {
+	if (u_planeVisible && planeIntersection(vec3(0, 1, 0), vec3(0, 0, 0), ray, hitDist)) {
 		didHit = true;
 		if (hitDist < minHitDist) {
 			minHitDist = hitDist;
 			hitPoint.position = ray.origin + ray.direction * minHitDist;
 			hitPoint.normal = vec3(0, 1, 0);
-			hitPoint.material = Material(vec3(1.0, 1.0, 1.0), vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 0.0), 0.0f, 1.0);
+			hitPoint.material = u_planeMaterial;
 		}
 	}
 

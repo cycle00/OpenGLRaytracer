@@ -49,10 +49,12 @@ namespace scene {
 	extern std::vector<object> objects;
 	extern std::vector<pointLight> lights;
 	extern std::vector<material> materials;
+	extern int planeMaterial;
 
 	extern shader* currShader;
 
 	extern int selectedObjectIndex;
+	extern bool planeSelected;
 	extern int selectedLightIndex;
 	extern int selectedMaterialIndex;
 	
@@ -62,6 +64,7 @@ namespace scene {
 	extern int lightBounces;
 	extern float skyboxGamma;
 	extern float skyboxStrength;
+	extern bool planeVisible;
 
 	void updateObjects();
 	void updateLights();

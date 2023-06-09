@@ -28,8 +28,6 @@ void guiManager::newFrame() {
 }
 
 void guiManager::objectEdit() {
-    ImGui::Begin("Object Editor", &showObjectEdit);
-    
     // new object
     if (scene::selectedObjectIndex == -1) {
         scene::object o = scene::object();
@@ -39,6 +37,8 @@ void guiManager::objectEdit() {
 
     scene::object prev = scene::objects[scene::selectedObjectIndex];
 
+    ImGui::Begin(std::string("Object ").append(std::to_string(scene::selectedObjectIndex)).c_str(), &showObjectEdit);
+    
     ImGui::Text("Type");
     ImGui::RadioButton("None", (int*)&scene::objects[scene::selectedObjectIndex].type, 0); ImGui::SameLine();
     ImGui::RadioButton("Sphere", (int*)&scene::objects[scene::selectedObjectIndex].type, 1); ImGui::SameLine();
@@ -59,6 +59,8 @@ void guiManager::objectEdit() {
     if (ImGui::Button("Material")) {
         showMaterialList = true;
     }
+    ImGui::SameLine();
+    ImGui::Text(std::string("Material ").append(std::to_string(scene::objects[scene::selectedObjectIndex].mat)).c_str());
 
     ImGui::Spacing();
     
@@ -70,6 +72,7 @@ void guiManager::objectEdit() {
         showObjectEdit = false;
         scene::removeObject(scene::selectedObjectIndex);
         scene::selectedObjectIndex--;
+        worldModified = true;
     }
 
     ImGui::End();
@@ -89,7 +92,8 @@ void guiManager::materialList() {
     for (unsigned int i = 0; i < scene::materials.size(); i++) {
         if (ImGui::SmallButton(std::string("Material ").append(std::to_string(i)).c_str())) {
             scene::selectedMaterialIndex = i;
-            scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
+            if (scene::planeSelected) scene::planeMaterial = scene::selectedMaterialIndex;
+            else scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
             worldModified = true;
             showMaterialEdit = true;
         }
@@ -99,15 +103,17 @@ void guiManager::materialList() {
 }
 
 void guiManager::materialEdit() {
-    ImGui::Begin("Material Editor", &showMaterialEdit);
-
+    // new material
     if (scene::selectedMaterialIndex == -1) {
         scene::materials.push_back(scene::material());
         scene::selectedMaterialIndex = scene::materials.size() - 1;
-        scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
+        if (scene::planeSelected) scene::planeMaterial = scene::selectedMaterialIndex;
+        else scene::objects[scene::selectedObjectIndex].mat = scene::selectedMaterialIndex;
     }
 
     scene::material prev = scene::materials[scene::selectedMaterialIndex];
+
+    ImGui::Begin(std::string("Material ").append(std::to_string(scene::selectedMaterialIndex)).c_str(), &showMaterialEdit);
 
     ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
     ImGui::ColorPicker3("Emission", scene::materials[scene::selectedMaterialIndex].emission);
@@ -123,8 +129,6 @@ void guiManager::materialEdit() {
 }
 
 void guiManager::lightEdit() {
-    ImGui::Begin("Light Editor", &showLightEdit);
-
     // new object
     if (scene::selectedLightIndex == -1) {
         scene::pointLight l = scene::pointLight();
@@ -133,6 +137,8 @@ void guiManager::lightEdit() {
     }
 
     scene::pointLight prev = scene::lights[scene::selectedLightIndex];
+
+    ImGui::Begin(std::string("Light ").append(std::to_string(scene::selectedLightIndex)).c_str(), &showLightEdit);
 
     ImGui::Text("Position");
     ImGui::DragFloat3("##position", scene::lights[scene::selectedLightIndex].position, 0.005f);
@@ -159,8 +165,8 @@ void guiManager::lightEdit() {
         showLightEdit = false;
         scene::removeLight(scene::selectedLightIndex);
         scene::selectedLightIndex--;
+        worldModified = true;
     }
-
 
     ImGui::End();
     scene::updateLights();
@@ -210,7 +216,16 @@ void guiManager::render() {
             }
         }
         ImGui::EndChild();
+        
         // plane
+        ImGui::Spacing();
+        if (ImGui::Checkbox("Plane Visible", &scene::planeVisible)) worldModified = true;
+        if (ImGui::Button("Plane Material")) {
+            scene::planeSelected = true;
+            scene::selectedMaterialIndex = scene::planeMaterial;
+            showMaterialList = true;
+        }
+        // smae line bs
 
         // shadow resolution and other uniform variables
         ImGui::Spacing();
@@ -220,7 +235,7 @@ void guiManager::render() {
         if (ImGui::DragFloat("Skybox Strength", &scene::skyboxStrength)) worldModified = true;
         ImGui::End();
 
-        // everything here
+        // everything else here
         if (showObjectEdit)
             objectEdit();
         if (showLightEdit)

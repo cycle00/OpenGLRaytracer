@@ -38,4 +38,5 @@ public:
 
 	void setUniformObject(scene::object object, unsigned int index);
 	void setUniformLight(scene::pointLight light, unsigned int index);
+	void setUniformMaterial(const std::string& name, scene::material material);
 };
