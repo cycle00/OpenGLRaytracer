@@ -76,6 +76,8 @@
     <None Include="res\skyboxes\belfast_sunset_puresky_2k.hdr" />
     <None Include="res\skyboxes\belfast_sunset_puresky_4k.hdr" />
     <None Include="res\skyboxes\kloppenheim_02_4k.hdr" />
+    <None Include="res\skyboxes\qwantani_4k.hdr" />
+    <None Include="res\skyboxes\mud_road_puresky_4k.hdr" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\renderer.h">

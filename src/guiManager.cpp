@@ -120,6 +120,8 @@ void guiManager::materialEdit() {
     ImGui::ColorPicker3("Specular", scene::materials[scene::selectedMaterialIndex].specular);
     ImGui::DragFloat("Emission Strength", &scene::materials[scene::selectedMaterialIndex].emissionStrength);
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
+    ImGui::DragFloat("Specular Highlight", &scene::materials[scene::selectedMaterialIndex].specularHighlight, 0.05f);
+    ImGui::DragFloat("Specular Exponent", &scene::materials[scene::selectedMaterialIndex].specularExponent, 0.001f);
 
     if (scene::materials[scene::selectedMaterialIndex] != prev) {
         worldModified = true;
@@ -197,6 +199,7 @@ void guiManager::render() {
             if (ImGui::SmallButton(std::string("Object ").append(std::to_string(i)).c_str())) {
                 scene::selectedObjectIndex = i;
                 scene::selectedMaterialIndex = scene::objects[i].mat;
+                scene::planeSelected = false;
                 showObjectEdit = true;
             }
         }
@@ -225,7 +228,8 @@ void guiManager::render() {
             scene::selectedMaterialIndex = scene::planeMaterial;
             showMaterialList = true;
         }
-        // smae line bs
+        ImGui::SameLine();
+        ImGui::Text(std::string("Material ").append(std::to_string(scene::planeMaterial)).c_str());
 
         // shadow resolution and other uniform variables
         ImGui::Spacing();

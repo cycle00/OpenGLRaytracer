@@ -135,6 +135,8 @@ void shader::setUniformObject(scene::object object, unsigned int index) {
     call(glUniform3f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.specular")), scene::materials[object.mat].specular[0], scene::materials[object.mat].specular[1], scene::materials[object.mat].specular[2]));
     call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.emissionStrength")), scene::materials[object.mat].emissionStrength));
     call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.roughness")), scene::materials[object.mat].roughness));
+    call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.specularHighlight")), scene::materials[object.mat].specularHighlight));
+    call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.specularExponent")), scene::materials[object.mat].specularExponent));
 }
 
 void shader::setUniformLight(scene::pointLight light, unsigned int index) {
@@ -151,6 +153,8 @@ void shader::setUniformMaterial(const std::string& name, scene::material materia
     call(glUniform3f(getUniformLocation(std::string(name).append(".specular")), material.specular[0], material.specular[1], material.specular[2]));
     call(glUniform1f(getUniformLocation(std::string(name).append(".emissionStrength")), material.emissionStrength));
     call(glUniform1f(getUniformLocation(std::string(name).append(".roughness")), material.roughness));
+    call(glUniform1f(getUniformLocation(std::string(name).append(".specularHighlight")), material.specularHighlight));
+    call(glUniform1f(getUniformLocation(std::string(name).append(".specularExponent")), material.specularExponent));
 }
 
 int shader::getUniformLocation(const std::string& name) {

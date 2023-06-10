@@ -39,9 +39,11 @@ namespace scene {
 		}
 		this->emissionStrength = 0.0f;
 		this->roughness = 1.0f;
+		this->specularHighlight = 0.0f;
+		this->specularExponent = 0.0f;
 	}
 
-	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness) {
+	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness, float specularHighlight, float specularExponent) {
 		this->id = materials.size();
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = *(albedo.begin() + i);
@@ -50,6 +52,8 @@ namespace scene {
 		}
 		this->emissionStrength = emissionStrength;
 		this->roughness = roughness;
+		this->specularHighlight = specularHighlight;
+		this->specularExponent = specularExponent;
 	}
 
 	bool material::operator==(material m) {
@@ -57,7 +61,9 @@ namespace scene {
 			compare3f(this->emission, m.emission) &&
 			compare3f(this->specular, m.specular) &&
 			this->emissionStrength == m.emissionStrength &&
-			this->roughness == m.roughness) return true;
+			this->roughness == m.roughness &&
+			this->specularHighlight == m.specularHighlight &&
+			this->specularExponent == m.specularExponent) return true;
 		else return false;
 	}
 
@@ -66,7 +72,9 @@ namespace scene {
 			!compare3f(this->emission, m.emission) ||
 			!compare3f(this->specular, m.specular) ||
 			this->emissionStrength != m.emissionStrength ||
-			this->roughness != m.roughness) return true;
+			this->roughness != m.roughness ||
+			this->specularHighlight != m.specularHighlight ||
+			this->specularExponent != m.specularExponent) return true;
 		else return false;
 	}
 

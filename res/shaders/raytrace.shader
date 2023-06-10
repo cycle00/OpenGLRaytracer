@@ -34,6 +34,8 @@ struct Material {
 	vec3 specular;
 	float emissionStrength;
 	float roughness;
+	float specularHighlight;
+	float specularExponent;
 };
 
 struct SurfacePoint {
@@ -183,7 +185,7 @@ vec3 sampleSkybox(vec3 dir) {
 	return u_skyboxStrength * pow(texture(u_skyboxTexture, vec2(0.5 + atan(dir.x, dir.z) / (2 * PI), 0.5 + asin(dir.y) / PI)).xyz, vec3(1 / u_skyboxGamma));
 }
 
-vec3 directIllumination(SurfacePoint hitPoint, float seed) {
+vec3 directIllumination(SurfacePoint hitPoint, vec3 cameraPos, float seed) {
 	vec3 illumination = vec3(0);
 	for (int i = 0; i < u_lights.length(); i++) {
 		PointLight light = u_lights[i];
@@ -212,6 +214,13 @@ vec3 directIllumination(SurfacePoint hitPoint, float seed) {
 
 			float attenuation = lightDistance * lightDistance;
 			illumination += light.color * light.power * diffuse * hitPoint.material.albedo * (1.0 - float(shadowRayHits) / shadowRays) / attenuation;
+
+			// specular highlights
+			vec3 lightDir = normalize(hitPoint.position - light.position);
+			vec3 reflectedLightDir = reflect(lightDir, hitPoint.normal);
+			vec3 cameraDir = normalize(cameraPos - hitPoint.position);
+			// https://en.wikipedia.org/wiki/Specular_highlight and basically ripped from https://github.com/carl-vbn/opengl-raytracing/blob/main/shaders/fragment.glsl but I made sure I understood it before using it obviously
+			illumination += hitPoint.material.specularHighlight * light.color * light.power / attenuation * pow(max(dot(cameraDir, reflectedLightDir), 0.0), 1.0 / max(hitPoint.material.specularExponent, EPSILON));
 		}
 	}
 	return illumination;
@@ -230,7 +239,7 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 			gi += energy * hitPoint.material.emission * hitPoint.material.emissionStrength;
 
 			// DI
-			gi += energy * directIllumination(hitPoint, seed);
+			gi += energy * directIllumination(hitPoint, rayOrigin, seed);
 
 			// II
 			float specChance = dot(hitPoint.material.specular, vec3(1.0 / 3.0));
