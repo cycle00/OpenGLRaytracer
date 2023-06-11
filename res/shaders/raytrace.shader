@@ -36,12 +36,16 @@ struct Material {
 	float roughness;
 	float specularHighlight;
 	float specularExponent;
+	bool transparent;
+	float refractiveIndex;
 };
 
 struct SurfacePoint {
 	vec3 position;
 	vec3 normal;
 	Material material;
+
+	bool frontFace;
 };
 
 struct Object {
@@ -90,19 +94,22 @@ bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDista
 	// (b_x^2 + b_y^2 + b_z^2)t^2 + (2(a_xb_x + a_yb_y + a_zb_z))t + a_x^2 + a_y^2 + a_z^2 - r^2 = 0
 
 	float a = dot(ray.direction, ray.direction);
-	float b = 2.0f * dot(relativeOrigin, ray.direction);
+	float half_b = dot(relativeOrigin, ray.direction);
 	float c = dot(relativeOrigin, relativeOrigin) - radius * radius;
 
-	float discriminant = b * b - 4.0f * a * c;
+	float discriminant = half_b * half_b - a * c;
 	if (discriminant < 0) {
 		return false;
 	}
-	float t1 = (-b - sqrt(discriminant)) / (2 * a);
-	if (t1 > 0) {
-		hitDistance = t1;
-		return true;
+	float sqrtd = sqrt(discriminant);
+	float root = (-half_b - sqrtd) / a;
+	if (root < 0) {
+		root = (-half_b + sqrtd) / a;
+		if (root < 0)
+			return false;
 	}
-	return false;
+	hitDistance = root;
+	return true;
 }
 
 bool planeIntersection(vec3 planeNormal, vec3 planePoint, Ray ray, out float hitDistance) {
@@ -127,7 +134,9 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			if (hitDist < minHitDist) {
 				minHitDist = hitDist;
 				hitPoint.position = ray.origin + ray.direction * minHitDist;
-				hitPoint.normal = normalize(hitPoint.position - u_objects[i].position);
+				vec3 outwardNormal = normalize(hitPoint.position - u_objects[i].position);
+				hitPoint.frontFace = dot(ray.direction, outwardNormal) < 0;
+				hitPoint.normal = hitPoint.frontFace ? outwardNormal : -outwardNormal;
 				hitPoint.material = u_objects[i].material;
 			}
 		}
@@ -183,6 +192,20 @@ vec3 sampleSkybox(vec3 dir) {
 	// u = 0.5 + (arctan2(dir_z, dir_x))/2pi -> but since we are inside the sphere, should be dir_x, dir_z
 	// v = 0.5 + (arcsin(dir_y))/pi
 	return u_skyboxStrength * pow(texture(u_skyboxTexture, vec2(0.5 + atan(dir.x, dir.z) / (2 * PI), 0.5 + asin(dir.y) / PI)).xyz, vec3(1 / u_skyboxGamma));
+}
+
+// https://raytracing.github.io/books/RayTracingInOneWeekend.html
+vec3 refract(vec3 rayDir, vec3 surfaceNormal, float etaOverEtaPrime) {
+	// sin(theta') = eta/eta' * sin(theta)
+	// R' = R'_perpendicular + R'_parallel
+	// R'_perpendicular = eta/eta' * (R + cos(theta) * n)
+	// R'_parallel = -sqrt(abs(1 - length(R'_perpendicular)^2)) * n
+	// as R and n are normalized, cos(theta) = dot(-R, n)
+	// R'_perpendicular = eta/eta' * (R + (dot(-R, n) * n)
+	float cosTheta = min(dot(-rayDir, surfaceNormal), 1.0);
+	vec3 Rperp = etaOverEtaPrime * (rayDir + cosTheta * surfaceNormal);
+	vec3 Rpara = -sqrt(abs(1 - Rperp.length() * Rperp.length())) * surfaceNormal;
+	return normalize(Rperp + Rpara);
 }
 
 vec3 directIllumination(SurfacePoint hitPoint, vec3 cameraPos, float seed) {
@@ -242,36 +265,47 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 			gi += energy * directIllumination(hitPoint, rayOrigin, seed);
 
 			// II
-			float specChance = dot(hitPoint.material.specular, vec3(1.0 / 3.0));
-			float diffChance = dot(hitPoint.material.albedo, vec3(1.0 / 3.0));
-
-			float sum = specChance + diffChance;
-			specChance /= sum;
-			diffChance /= sum;
-
-			float roulette = rand(hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
-			// specular reflections
-			if (roulette < specChance) {
-				float smoothness = 1.0 - hitPoint.material.roughness;
-				float alpha = pow(1000.0, smoothness * smoothness);
-				if (smoothness == 1.0) {
-					rayDirection = reflect(rayDirection, hitPoint.normal);
-				}
-				else {
-					rayDirection = sampleHemisphere(reflect(rayDirection, hitPoint.normal), alpha, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
-				}
+			if (hitPoint.material.transparent) {
+				// refraction (super cool)
+				float refractionRatio = hitPoint.frontFace ? (1.0 / hitPoint.material.refractiveIndex) : hitPoint.material.refractiveIndex;
+				vec3 refracted = refract(rayDirection, hitPoint.normal, refractionRatio);
+				rayDirection = refracted;
 				rayOrigin = hitPoint.position + rayDirection * EPSILON;
-				float f = (alpha + 2) / (alpha + 1);
-				energy *= hitPoint.material.specular * clamp(dot(hitPoint.normal, rayDirection) * f, 0.0, 1.0);
-			}
-			// diffuse reflections
-			else if (diffChance > 0 && roulette < sum) {
-				rayOrigin = hitPoint.position + hitPoint.normal * EPSILON;
-				rayDirection = sampleHemisphere(hitPoint.normal, 1.0, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
-				energy *= hitPoint.material.albedo * clamp(dot(hitPoint.normal, rayDirection), 0.0, 1.0);
+				energy *= hitPoint.material.albedo;
 			}
 			else {
-				break;
+				// reflection
+				float specChance = dot(hitPoint.material.specular, vec3(1.0 / 3.0));
+				float diffChance = dot(hitPoint.material.albedo, vec3(1.0 / 3.0));
+
+				float sum = specChance + diffChance;
+				specChance /= sum;
+				diffChance /= sum;
+
+				float roulette = rand(hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+				// specular reflections
+				if (roulette < specChance) {
+					float smoothness = 1.0 - hitPoint.material.roughness;
+					float alpha = pow(1000.0, smoothness * smoothness);
+					if (smoothness == 1.0) {
+						rayDirection = reflect(rayDirection, hitPoint.normal);
+					}
+					else {
+						rayDirection = sampleHemisphere(reflect(rayDirection, hitPoint.normal), alpha, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+					}
+					rayOrigin = hitPoint.position + rayDirection * EPSILON;
+					float f = (alpha + 2) / (alpha + 1);
+					energy *= hitPoint.material.specular * clamp(dot(hitPoint.normal, rayDirection) * f, 0.0, 1.0);
+				}
+				// diffuse reflections
+				else if (diffChance > 0 && roulette < sum) {
+					rayOrigin = hitPoint.position + hitPoint.normal * EPSILON;
+					rayDirection = sampleHemisphere(hitPoint.normal, 1.0, hitPoint.position.zx + vec2(hitPoint.position.y) + vec2(seed, i));
+					energy *= hitPoint.material.albedo * clamp(dot(hitPoint.normal, rayDirection), 0.0, 1.0);
+				}
+				else {
+					break;
+				}
 			}
 		}
 		else {

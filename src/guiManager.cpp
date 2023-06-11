@@ -122,6 +122,8 @@ void guiManager::materialEdit() {
     ImGui::SliderFloat("Roughness", &scene::materials[scene::selectedMaterialIndex].roughness, 0.0f, 1.0f);
     ImGui::DragFloat("Specular Highlight", &scene::materials[scene::selectedMaterialIndex].specularHighlight, 0.05f);
     ImGui::DragFloat("Specular Exponent", &scene::materials[scene::selectedMaterialIndex].specularExponent, 0.001f);
+    ImGui::Checkbox("Transparent", &scene::materials[scene::selectedMaterialIndex].transparent);
+    ImGui::InputFloat("Index of Refraction", &scene::materials[scene::selectedMaterialIndex].refractiveIndex);
 
     if (scene::materials[scene::selectedMaterialIndex] != prev) {
         worldModified = true;

@@ -137,6 +137,8 @@ void shader::setUniformObject(scene::object object, unsigned int index) {
     call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.roughness")), scene::materials[object.mat].roughness));
     call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.specularHighlight")), scene::materials[object.mat].specularHighlight));
     call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.specularExponent")), scene::materials[object.mat].specularExponent));
+    call(glUniform1i(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.transparent")), scene::materials[object.mat].transparent));
+    call(glUniform1f(getUniformLocation(std::string("u_objects[").append(std::to_string(index)).append("].material.refractiveIndex")), scene::materials[object.mat].refractiveIndex));
 }
 
 void shader::setUniformLight(scene::pointLight light, unsigned int index) {
@@ -155,6 +157,9 @@ void shader::setUniformMaterial(const std::string& name, scene::material materia
     call(glUniform1f(getUniformLocation(std::string(name).append(".roughness")), material.roughness));
     call(glUniform1f(getUniformLocation(std::string(name).append(".specularHighlight")), material.specularHighlight));
     call(glUniform1f(getUniformLocation(std::string(name).append(".specularExponent")), material.specularExponent));
+
+    call(glUniform1i(getUniformLocation(std::string(name).append(".transparent")), material.transparent));
+    call(glUniform1f(getUniformLocation(std::string(name).append(".refractiveIndex")), material.refractiveIndex));
 }
 
 int shader::getUniformLocation(const std::string& name) {

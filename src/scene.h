@@ -18,9 +18,11 @@ namespace scene {
 		float roughness;
 		float specularHighlight;
 		float specularExponent;
+		bool transparent;
+		float refractiveIndex;
 
 		material();
-		material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness, float specularHighlight, float specularExponent); // add more as needed
+		material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness, float specularHighlight, float specularExponent, bool transparent, float refractiveIndex); // add more as needed
 		bool operator==(material m);
 		bool operator!=(material m);
 	};

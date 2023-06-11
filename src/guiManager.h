@@ -28,7 +28,6 @@ public:
 	void newFrame();
 	void objectEdit();
 	void lightEdit();
-	void planeEdit();
 	void materialList();
 	void materialEdit();
 	void render();

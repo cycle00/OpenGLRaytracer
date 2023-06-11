@@ -41,9 +41,11 @@ namespace scene {
 		this->roughness = 1.0f;
 		this->specularHighlight = 0.0f;
 		this->specularExponent = 0.0f;
+		this->transparent = false;
+		this->refractiveIndex = 1.0f;
 	}
 
-	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness, float specularHighlight, float specularExponent) {
+	material::material(const std::initializer_list<float>& albedo, const std::initializer_list<float>& emission, const std::initializer_list<float>& specular, float emissionStrength, float roughness, float specularHighlight, float specularExponent, bool transparent, float refractiveIndex) {
 		this->id = materials.size();
 		for (int i = 0; i < 3; i++) {
 			this->albedo[i] = *(albedo.begin() + i);
@@ -54,6 +56,8 @@ namespace scene {
 		this->roughness = roughness;
 		this->specularHighlight = specularHighlight;
 		this->specularExponent = specularExponent;
+		this->transparent = transparent;
+		this->refractiveIndex = refractiveIndex;
 	}
 
 	bool material::operator==(material m) {
@@ -63,7 +67,9 @@ namespace scene {
 			this->emissionStrength == m.emissionStrength &&
 			this->roughness == m.roughness &&
 			this->specularHighlight == m.specularHighlight &&
-			this->specularExponent == m.specularExponent) return true;
+			this->specularExponent == m.specularExponent &&
+			this->transparent == m.transparent &&
+			this->refractiveIndex == m.refractiveIndex) return true;
 		else return false;
 	}
 
@@ -74,7 +80,9 @@ namespace scene {
 			this->emissionStrength != m.emissionStrength ||
 			this->roughness != m.roughness ||
 			this->specularHighlight != m.specularHighlight ||
-			this->specularExponent != m.specularExponent) return true;
+			this->specularExponent != m.specularExponent ||
+			this->transparent != m.transparent ||
+			this->refractiveIndex != m.refractiveIndex) return true;
 		else return false;
 	}
 

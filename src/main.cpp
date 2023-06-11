@@ -185,7 +185,7 @@ int main(void)
         };
 
         // skybox whatever
-        texture skybox("res/skyboxes/mud_road_puresky_4k.hdr");
+        texture skybox("res/skyboxes/belfast_sunset_puresky_4k.hdr");
         skybox.bind(1);
 
         // initialize a vertex array
@@ -215,8 +215,9 @@ int main(void)
         shader.setUniform1i("u_screenTexture", 0);
         shader.setUniform1i("u_skyboxTexture", 1);
 
-        scene::materials.push_back(scene::material({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, 0.0f, 0.0f, 5.0f, 0.002f));
-        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, 0));
+        scene::materials.push_back(scene::material());
+        scene::materials.push_back(scene::material({ 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, 0.0f, 1.0f, 0.0f, 0.0f, true, 1.5f));
+        scene::addObject(scene::object(1, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, 1));
         scene::addLight(scene::pointLight({ 2.0f, 8.0f, -1.0f }, 2.0f, { 1.0f, 1.0f, 1.0f }, 20.0f, 30.0f));
 
         scene::currShader = &shader;
@@ -226,6 +227,8 @@ int main(void)
         renderer renderer;
 
         guiManager gui(window);
+        
+        cameraYaw += 5 * 0.002f;
 
         call(glViewport(0, 0, scene::screenWidth, scene::screenHeight));
         call(glDisable(GL_DEPTH_TEST));
