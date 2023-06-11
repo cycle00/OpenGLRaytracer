@@ -8,6 +8,7 @@
 #include "vendor/imgui/imgui_impl_opengl3.h"
 
 #include <iostream>
+#include <time.h>
 
 #include "renderer.h"
 
@@ -131,6 +132,7 @@ bool handleMovement(GLFWwindow* window, double deltaTime, glm::vec3& cameraPosit
 
 int main(void)
 {
+    srand((unsigned)std::time(NULL));
     GLFWwindow* window;
 
     // Initialize the library
@@ -227,14 +229,14 @@ int main(void)
         renderer renderer;
 
         guiManager gui(window);
-        
-        cameraYaw += 5 * 0.002f;
 
         call(glViewport(0, 0, scene::screenWidth, scene::screenHeight));
         call(glDisable(GL_DEPTH_TEST));
 
         double deltaTime = 0.0f;
         int accumulatedPasses = 0;
+        float schlickPass = 1.0f;
+        bool increment = true;
         bool refresh = false;
         // Loop until the user closes the window
         while (!glfwWindowShouldClose(window)) {
@@ -251,6 +253,8 @@ int main(void)
             }
             if (refresh) {
                 accumulatedPasses = 0;
+                schlickPass = 1;
+                increment = true;
                 refresh = false;
                 shader.setUniform1i("u_accumulatedPasses", accumulatedPasses);
             }
@@ -261,6 +265,18 @@ int main(void)
 
             shader.setUniform1f("u_time", preTime);
             scene::setProperties();
+
+            shader.setUniform1f("u_schlickPass", schlickPass);
+            if (schlickPass > 0 && increment) {
+                schlickPass -= 0.1f;
+            }
+            else if (schlickPass < 0) {
+                increment = false;
+            }
+
+            if (!increment) {
+                schlickPass = (float)rand() / RAND_MAX;
+            }
 
             fb.bind();
             shader.setUniform1i("u_directPass", 0);

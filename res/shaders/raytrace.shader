@@ -71,6 +71,7 @@ uniform sampler2D u_screenTexture;
 uniform sampler2D u_skyboxTexture;
 uniform bool u_directPass;
 uniform int u_accumulatedPasses;
+uniform float u_schlickPass;
 
 uniform int u_shadowResolution;
 uniform int u_lightBounces;
@@ -208,6 +209,14 @@ vec3 refract(vec3 rayDir, vec3 surfaceNormal, float etaOverEtaPrime) {
 	return normalize(Rperp + Rpara);
 }
 
+// https://raytracing.github.io/books/RayTracingInOneWeekend.html
+float reflectance(float cosine, float ref_idx) {
+	// Schlick's approximation
+	float r0 = (1 - ref_idx) / (1 + ref_idx);
+	r0 = r0 * r0;
+	return r0 + (1 - r0) * pow((1 - cosine), 5);
+}
+
 vec3 directIllumination(SurfacePoint hitPoint, vec3 cameraPos, float seed) {
 	vec3 illumination = vec3(0);
 	for (int i = 0; i < u_lights.length(); i++) {
@@ -268,8 +277,15 @@ vec3 calculateGI(Ray cameraRay, float seed) {
 			if (hitPoint.material.transparent) {
 				// refraction (super cool)
 				float refractionRatio = hitPoint.frontFace ? (1.0 / hitPoint.material.refractiveIndex) : hitPoint.material.refractiveIndex;
-				vec3 refracted = refract(rayDirection, hitPoint.normal, refractionRatio);
-				rayDirection = refracted;
+				float cosTheta = min(dot(-rayDirection, hitPoint.normal), 1.0);
+				float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+
+				if (refractionRatio * sinTheta > 1.0 || reflectance(cosTheta, refractionRatio) > u_schlickPass) {
+					rayDirection = reflect(rayDirection, hitPoint.normal);
+				}
+				else {
+					rayDirection = refract(rayDirection, hitPoint.normal, refractionRatio);
+				}
 				rayOrigin = hitPoint.position + rayDirection * EPSILON;
 				energy *= hitPoint.material.albedo;
 			}
