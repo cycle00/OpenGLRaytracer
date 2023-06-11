@@ -25,7 +25,7 @@ namespace scene {
 	int screenWidth = 0;
 	int screenHeight = 0;
 	int shadowResolution = 50;
-	int lightBounces = 5;
+	int lightBounces = 10;
 	float skyboxGamma = 2.2f;
 	float skyboxStrength = 0.4f;
 	bool planeVisible = true;

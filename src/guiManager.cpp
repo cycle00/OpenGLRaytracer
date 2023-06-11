@@ -37,7 +37,9 @@ void guiManager::objectEdit() {
 
     scene::object prev = scene::objects[scene::selectedObjectIndex];
 
-    ImGui::Begin(std::string("Object ").append(std::to_string(scene::selectedObjectIndex)).c_str(), &showObjectEdit);
+    ImGui::Begin("Object Editor", &showObjectEdit);
+    ImGui::Text(std::string("Object ").append(std::to_string(scene::selectedObjectIndex)).c_str());
+    ImGui::Spacing();
     
     ImGui::Text("Type");
     ImGui::RadioButton("None", (int*)&scene::objects[scene::selectedObjectIndex].type, 0); ImGui::SameLine();
@@ -113,7 +115,9 @@ void guiManager::materialEdit() {
 
     scene::material prev = scene::materials[scene::selectedMaterialIndex];
 
-    ImGui::Begin(std::string("Material ").append(std::to_string(scene::selectedMaterialIndex)).c_str(), &showMaterialEdit);
+    ImGui::Begin("Material Editor", &showMaterialEdit);
+    ImGui::Text(std::string("Material ").append(std::to_string(scene::selectedMaterialIndex)).c_str());
+    ImGui::Spacing();
 
     ImGui::ColorPicker3("Albedo", scene::materials[scene::selectedMaterialIndex].albedo);
     ImGui::ColorPicker3("Emission", scene::materials[scene::selectedMaterialIndex].emission);
@@ -142,7 +146,9 @@ void guiManager::lightEdit() {
 
     scene::pointLight prev = scene::lights[scene::selectedLightIndex];
 
-    ImGui::Begin(std::string("Light ").append(std::to_string(scene::selectedLightIndex)).c_str(), &showLightEdit);
+    ImGui::Begin("Light Editor", &showLightEdit);
+    ImGui::Text(std::string("Light ").append(std::to_string(scene::selectedLightIndex)).c_str());
+    ImGui::Spacing();
 
     ImGui::Text("Position");
     ImGui::DragFloat3("##position", scene::lights[scene::selectedLightIndex].position, 0.005f);
