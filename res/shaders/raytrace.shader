@@ -113,6 +113,47 @@ bool sphereIntersection(vec3 position, float radius, Ray ray, out float hitDista
 	return true;
 }
 
+// https://github.com/carl-vbn/opengl-raytracing/blob/main/shaders/fragment.glsl
+bool boxIntersection(vec3 position, vec3 scale, Ray ray, out float hitDistance) {
+	float t1 = -1000000000000.0;
+	float t2 = 1000000000000.0;
+
+	vec3 boxMin = position - scale / 2.0;
+	vec3 boxMax = position + scale / 2.0;
+
+	vec3 t0s = (boxMin - ray.origin) / ray.direction;
+	vec3 t1s = (boxMax - ray.origin) / ray.direction;
+
+	vec3 tsmaller = min(t0s, t1s);
+	vec3 tbigger = max(t0s, t1s);
+
+	t1 = max(t1, max(tsmaller.x, max(tsmaller.y, tsmaller.z)));
+	t2 = min(t2, min(tbigger.x, min(tbigger.y, tbigger.z)));
+	
+	hitDistance = t1;
+	if (t1 < 0) hitDistance = t2;
+	return ((t1 >= 0 || t2 >= 0) && t1 <= t2);
+}
+
+vec3 boxNormal(vec3 cubePosition, vec3 scale, vec3 surfacePosition)
+{
+	// Source: https://gist.github.com/Shtille/1f98c649abeeb7a18c5a56696546d3cf
+	// step(edge,x) : x < edge ? 0 : 1
+
+	vec3 boxMin = cubePosition - scale / 2.0;
+	vec3 boxMax = cubePosition + scale / 2.0;
+
+	vec3 center = (boxMax + boxMin) * 0.5;
+	vec3 boxSize = (boxMax - boxMin) * 0.5;
+	vec3 pc = surfacePosition - center;
+	// step(edge,x) : x < edge ? 0 : 1
+	vec3 normal = vec3(0.0);
+	normal += vec3(sign(pc.x), 0.0, 0.0) * step(abs(abs(pc.x) - boxSize.x), EPSILON);
+	normal += vec3(0.0, sign(pc.y), 0.0) * step(abs(abs(pc.y) - boxSize.y), EPSILON);
+	normal += vec3(0.0, 0.0, sign(pc.z)) * step(abs(abs(pc.z) - boxSize.z), EPSILON);
+	return normalize(normal);
+}
+
 bool planeIntersection(vec3 planeNormal, vec3 planePoint, Ray ray, out float hitDistance) {
 	float angle = dot(planeNormal, ray.direction);
 	if (abs(angle) > EPSILON) {
@@ -142,7 +183,17 @@ bool raycast(Ray ray, out SurfacePoint hitPoint) {
 			}
 		}
 
-		// if (u_objects[i].type == 2)
+		if (u_objects[i].type == 2 && boxIntersection(u_objects[i].position, u_objects[i].scale, ray, hitDist)) {
+			didHit = true;
+			if (hitDist < minHitDist) {
+				minHitDist = hitDist;
+				hitPoint.position = ray.origin + ray.direction * minHitDist;
+				vec3 outwardNormal = boxNormal(u_objects[i].position, u_objects[i].scale, ray.origin + ray.direction * minHitDist);
+				hitPoint.frontFace = dot(ray.direction, outwardNormal) < 0;
+				hitPoint.normal = hitPoint.frontFace ? outwardNormal : -outwardNormal;
+				hitPoint.material = u_objects[i].material;
+			}
+		}
 	}
 
 	if (u_planeVisible && planeIntersection(vec3(0, 1, 0), vec3(0, 0, 0), ray, hitDist)) {
